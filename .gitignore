@@ -1,2 +1,11 @@
+# Python bytecode
+**/__pycache__/
+
+# Type checking cache
+**/.mypy_cache/
+
+# Virtual environment
+**/venv/
+
+# macOS metadata
 .DS_Store
-__pycache__/
