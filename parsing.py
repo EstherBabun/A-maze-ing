@@ -165,16 +165,26 @@ def main() -> None:
     print("=== First Parsing Test ===\n")
 
     # print the config dictionary
-    print("The config dict:")
+    print("The config dict:\n")
     for key, value in config.items():
         print(f"  {key}: {value}")
     print()
 
     # print the attributes of my maze:
-    print("The maze attributes:")
+    print("The maze attributes:\n")
     for key, value in vars(my_maze).items():
-        print(f"  {key}: {value}")
+        if key == "grid":
+            print(f"  {key}: ")
+            for item in value:
+                print("  ", end='')
+                for it in item:
+                    print(f"{it.coord}", end='')
+                print()
+        else:
+            print(f"  {key}: {value}")
     print()
+    
+    print("The maze hex representation:\n")
     my_maze.external_walls()
     my_maze.print_grid_hexa()
 
