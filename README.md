@@ -3,18 +3,49 @@
 
 # Usefull tools
 
-- typing module + `MyPy` (see flags --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs)
-- `PEP 257` google style for docstings
-- docstring pluggin for `flake8`
-- frameworks like `pytest` or `unittest` for unit testing
-- virtual environments (e.g., venv or conda) for dependency isolation 
-- `pdb` debugger
-- `MiniLibX` (MLX) library
+- #### [mypy](#https://mypy.readthedocs.io/en/stable/) for static type checking
+    flags to use : 
+    - --warn-return-any 
+    - --warn-unused-ignores 
+    - --ignore-missing-imports
+    - --disallow-untyped-defs 
+    - --check-untyped-defs
+
+- #### [PEP 257](#https://peps.python.org/pep-0257/) for docstring convention
+
+- #### [flake8](#https://flake8.pycqa.org/en/latest/) for Style Enforcement
+
+- #### [pytest](#https://docs.pytest.org/en/stable/) for unit testing
+    Note: pytest is more intuitive than unittest
+- #### [venv](#https://docs.python.org/3/library/venv.html) for virtual environments
+    ```bash
+    # Create venv in the project's root folder
+    $ python3 -m venv /path/to/venv
+    ```
+    ```bash
+    # Activate it 
+    # under bash/zsh :
+    $ source venv/bin/activate
+    ```
+    ```bash
+    # install dependencies and tools
+    (venv) $ install <your_py_tool>
+    ```
+    ```bash
+    # When done working, deactivate
+    (venv) $ deactivate
+    ```
+
+- #### [pdb](#https://docs.python.org/3/library/pdb.html) for python debugging
+
+- #### [MiniLibX](#https://harm-smits.github.io/42docs/libs/minilibx) graphics library for visual rendering
+
 
 
 # Theory
 - Prim's, Kruskal's and the recursive backtracker algorithms for maze generation.
 - Perfect mazes are related to spanning trees in graph theory.
+
 
 # config.txt
 example:
