@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # File: parsing.py
 # Author: ebabun <ebabun@student.42belgium.be>
+# Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/15 18:33:22
 # Updated: 2026/01/15 18:33:22
 
@@ -23,10 +24,10 @@ class Cell(object):
         checked (bool): True if the cell has been checked already
     """
 
-    def __init__(self, col: int, row: int) -> None:
+    def __init__(self, x: int, y: int) -> None:
         """Initialise the attributes of a cell."""
-        self.coord: tuple = (col, row)
-        self.walls: Dict[str, int] = {"W": 1, "S": 1, "E": 1, "N": 1}
+        self.coord: tuple = (x, y)
+        self.walls: Dict[str, int] = {"W": 0, "S": 0, "E": 0, "N": 0}
         self.common: List[Cell] = []
         self.is_extry: bool = False
         self.current: bool = False
@@ -57,8 +58,26 @@ class Maze:
         self.entry: tuple = config["ENTRY"]
         self.exit: tuple = config["EXIT"]
         self.path: str = ""
-        # self.grid: List[Cell] = []
+        self.grid: List[List[Cell]] = [[Cell(x, y) for x in range(self.cols)]
+                                       for y in range(self.rows)]
         # self.maze: ?
+
+    def external_walls(self):
+        """To put external walls and print the map empty"""
+        for x in range(self.cols):
+            self.grid[0][x].walls["N"] = 1
+            self.grid[self.rows - 1][x].walls["S"] = 1
+        for y in range(self.rows):
+            self.grid[y][0].walls["W"] = 1
+            self.grid[y][self.cols - 1].walls["E"] = 1
+
+    def print_grid_hexa(self):
+        """To print in hexa the grid of the maze"""
+        for y in range(self.rows):
+            row = ""
+            for x in range(self.cols):
+                row += self.grid[y][x].hex_repr
+            print(row)
 
 
 def load_config(file: str) -> Dict[str, Any]:
@@ -156,6 +175,8 @@ def main() -> None:
     for key, value in vars(my_maze).items():
         print(f"  {key}: {value}")
     print()
+    my_maze.external_walls()
+    my_maze.print_grid_hexa()
 
 
 if __name__ == "__main__":
