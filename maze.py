@@ -6,11 +6,12 @@
 # Updated: 2026/01/15 18:33:22
 
 
-"""Docstring to write. à écrire"""
+"""Docstring to write. Version Morgane"""
 
 import sys
 import math
 from typing import Dict, List, Any
+import random
 
 
 class Cell(object):
@@ -48,7 +49,7 @@ class Cell(object):
         return hex_repr
 
 
-class Maze:
+class Maze:  # No need anymore ?
     """A class for the maze attributes and methods."""
 
     def __init__(self, config: Dict[str, Any]) -> None:
@@ -77,6 +78,8 @@ class Maze:
         for y in range(self.rows):
             row = ""
             for x in range(self.cols):
+                if Cell(x, y).visitedcond is True:
+                    row += "G"
                 row += self.grid[y][x].hex_repr
             print(row)
 
@@ -122,6 +125,86 @@ class Maze:
             x, y = item
             self.grid[y][x].visited = True
         return True
+
+
+class MazeGenerator:
+    """A class for the maze attributes and methods."""
+
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialise the attributes of the maze with the loaded config."""
+        self.cols: int = config["WIDTH"]
+        self.rows: int = config["HEIGHT"]
+        self.tot_size: int = config["WIDTH"]*config["HEIGHT"]
+        self.entry: tuple = config["ENTRY"]
+        self.exit: tuple = config["EXIT"]
+        self.path: str = ""
+        self.grid: List[List[Cell]] = [[Cell(x, y) for x in range(self.cols)]
+                                       for y in range(self.rows)]
+
+    def random_choice_depart(self) -> Cell:
+        """To randomly choice a non visited cell in the grid"""
+        non_visited = []
+        for row in self.grid:
+            for cell in row:
+                if not cell.visited:
+                    non_visited.append(cell)
+        return random.choice(non_visited)
+
+    def neighbors_cells(self, cell) -> list[Cell]:
+        """To define all neighbors cells of a target one"""
+        x, y = cell
+        nearby_cell = []
+
+        if x > 0:  # gauche
+            nearby_cell.append(self.grid[y][x - 1])
+        if x < self.cols - 1:  # droite
+            nearby_cell.append(self.grid[y][x + 1])
+        if y > 0:  # haut
+            nearby_cell.append(self.grid[y - 1][x])
+        if y < self.rows - 1:  # bas
+            nearby_cell.append(self.grid[y + 1][x])
+        return nearby_cell
+
+    def random_walk(self, start: Cell) -> list[Cell]:
+        """walk on until found the maze without loop"""
+        cell_in_path = set()
+        path = [start]
+        cell = start
+
+        while not cell.visited:
+            nxt = random.choice(self.neighbors_cells(cell.coord))
+
+            if nxt.coord in cell_in_path:
+                path = [start]
+                cell = start
+                cell_in_path = set()
+            else:
+                cell_in_path.add(nxt.coord)
+                path.append(nxt)
+                cell = nxt
+        return path
+
+    def Wilson_algorithm(self):
+        """Wilson algorithm to generate a beautiful random maze"""
+        # Premier îlot du labyrinthe
+        x, y = self.entry
+        self.grid[y][x].visited = True
+
+        # Se promener au hasard
+        choice_cell = self.random_choice_depart()
+        path = self.random_walk(choice_cell)
+        # next step: ajouter le path au labyrinthe ! 
+
+    def print_grid_hexa(self) -> None:
+        """To print in hexa the grid of the maze"""
+        for y in range(self.rows):
+            row = ""
+            for x in range(self.cols):
+                if self.grid[y][x].visited:
+                    row += "G"
+                else:
+                    row += self.grid[y][x].hex_repr
+            print(row)
 
 
 def load_config(file: str) -> Dict[str, Any]:
@@ -216,19 +299,11 @@ def main() -> None:
     if config is None:
         return
 
-    my_maze: Maze = Maze(config)
-
-    print("=== First Parsing Test ===\n")
-
-    # print the config dictionary
-    print("The config dict:\n")
-    for key, value in config.items():
-        print(f"  {key}: {value}")
-    print()
-
-    print("The maze hex representation:\n")
-    my_maze.external_walls()
-    my_maze.print_grid_hexa()
+    # my_maze: Maze = Maze(config)
+    print("\n=== Test pour Wilson ===\n")
+    maze = MazeGenerator(config)
+    maze.Wilson_algorithm()
+    maze.print_grid_hexa()
 
 
 if __name__ == "__main__":

@@ -59,6 +59,9 @@ example:
 
 Note: We may add additional keys (e.g., seed, algorithm, display mode) if useful.
 
+# RESSOURCES
 
+article on Wilson's algo : https://medium.com/@batbat.senturk/the-ultimate-unbiased-maze-generation-technique-you-need-to-see-46123d5fec76
+github : maze generating and solving https://github.com/batuSenturk/Mazes/?source=post_page-----46123d5fec76---------------------------------------
 
-
+Pour résoudre le maze : BFS - trouve le chemin le plus court et s'il n'y en a qu'un
