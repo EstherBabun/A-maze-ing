@@ -6,7 +6,7 @@
 # Updated: 2026/01/15 18:33:22
 
 
-"""Docstring to write."""
+"""Docstring to write. à écrire"""
 
 import sys
 import math
