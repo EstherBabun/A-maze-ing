@@ -63,7 +63,7 @@ class Maze:
                                        for y in range(self.rows)]
         # self.maze: ?
 
-    def external_walls(self):
+    def external_walls(self) -> None:
         """To put external walls and print the map empty"""
         for x in range(self.cols):
             self.grid[0][x].walls["N"] = 1
@@ -72,7 +72,7 @@ class Maze:
             self.grid[y][0].walls["W"] = 1
             self.grid[y][self.cols - 1].walls["E"] = 1
 
-    def print_grid_hexa(self):
+    def print_grid_hexa(self) -> None:
         """To print in hexa the grid of the maze"""
         for y in range(self.rows):
             row = ""
@@ -85,38 +85,42 @@ class Maze:
         w = self.cols
         h = self.rows
         if w < 9 or h < 7:
-                return True #  No 42_walls, maze too small
+            return True  # No 42_walls, maze too small
         if w % 2 == 0:
-                cx = math.floor(w / 2) - 1
+            cx = math.floor(w / 2) - 1
         else:
-                cx = math.floor(w / 2)
+            cx = math.floor(w / 2)
         if h % 2 == 0:
-                cy = math.floor(h / 2) - 1
+            cy = math.floor(h / 2) - 1
         else:
-                cy = math.floor(h / 2)
+            cy = math.floor(h / 2)
 
-        four_walls: List[tuple] = [(cx - 1, cy), (cx - 2, cy), (cx - 3, cy),
-                        (cx - 1, cy + 1), (cx - 1, cy + 2),
-                        (cx - 3, cy - 1), (cx - 3, cy - 2)]
-        two_walls: List[tuple] = [(cx + 1, cy), (cx + 2, cy), (cx + 3, cy),
-                        (cx + 1, cy + 1), (cx + 1, cy + 2),
-                        (cx + 3, cy - 1), (cx + 3, cy - 2),
-                        (cx + 1, cy - 2), (cx + 2, cy - 2), (cx + 3, cy - 2),
-                        (cx + 2, cy + 2), (cx + 3, cy + 2)]
+        four_walls: List[tuple] = [
+            (cx - 1, cy), (cx - 2, cy), (cx - 3, cy),
+            (cx - 1, cy + 1), (cx - 1, cy + 2),
+            (cx - 3, cy - 1), (cx - 3, cy - 2),
+            ]
+        two_walls: List[tuple] = [
+            (cx + 1, cy), (cx + 2, cy), (cx + 3, cy),
+            (cx + 1, cy + 1), (cx + 1, cy + 2),
+            (cx + 3, cy - 1), (cx + 3, cy - 2),
+            (cx + 1, cy - 2), (cx + 2, cy - 2), (cx + 3, cy - 2),
+            (cx + 2, cy + 2), (cx + 3, cy + 2)
+            ]
 
         ft_walls = four_walls + two_walls
 
         if self.entry in ft_walls:
-                print(f"Wrong entry point: {self.entry}")
-                print(f"Forbiden: {ft_walls}")
-                return False #  return false to stop execution !
+            print(f"Wrong entry point: {self.entry}")
+            print(f"Forbiden: {ft_walls}")
+            return False  # return false to stop execution !
         if self.exit in ft_walls:
-                print(f"Wrong exit point: {self.exit}")
-                print(f"Forbiden: {ft_walls}")
-                return False #  return false to stop execution
+            print(f"Wrong exit point: {self.exit}")
+            print(f"Forbiden: {ft_walls}")
+            return False  # return false to stop execution
         for item in ft_walls:
-                x, y = item
-                self.grid[y][x].visited = True
+            x, y = item
+            self.grid[y][x].visited = True
         return True
 
 
@@ -221,7 +225,7 @@ def main() -> None:
     for key, value in config.items():
         print(f"  {key}: {value}")
     print()
-    
+
     print("The maze hex representation:\n")
     my_maze.external_walls()
     my_maze.print_grid_hexa()
