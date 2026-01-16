@@ -21,7 +21,7 @@ class Cell(object):
         common (list): list adjacent cells (x-1,y)(x+1,y)(x,y-1)(x,y+1)
         is_extry (bool): True if the cell is the entry or the exit
         current (bool): True if this is the current cell
-        checked (bool): True if the cell has been checked already
+        visited (bool): True if the cell has been checked already
     """
 
     def __init__(self, x: int, y: int) -> None:
@@ -31,7 +31,7 @@ class Cell(object):
         self.common: List[Cell] = []
         self.is_extry: bool = False
         self.current: bool = False
-        self.checked: bool = False
+        self.visited: bool = False
 
     @property
     def hex_repr(self) -> str:
@@ -78,6 +78,45 @@ class Maze:
             for x in range(self.cols):
                 row += self.grid[y][x].hex_repr
             print(row)
+
+    def block_42_walls(self) -> bool:
+        """Prevent access to the 42 walls in the center of the maze."""
+        w = self.cols
+        h = self.rows
+        if w < 9 or h < 7:
+                return True #  No 42_walls, maze too small
+        if w % 2 == 0:
+                cx = math.floor(w / 2) - 1
+        else:
+                cx = math.floor(w / 2)
+        if h % 2 == 0:
+                cy = math.floor(h / 2) - 1
+        else:
+                cy = math.floor(h / 2)
+
+        four_walls: List[tuple] = [(cx - 1, cy), (cx - 2, cy), (cx - 3, cy),
+                        (cx - 1, cy + 1), (cx - 1, cy + 2),
+                        (cx - 3, cy - 1), (cx - 3, cy - 2)]
+        two_walls: List[tuple] = [(cx + 1, cy), (cx + 2, cy), (cx + 3, cy),
+                        (cx + 1, cy + 1), (cx + 1, cy + 2),
+                        (cx + 3, cy - 1), (cx + 3, cy - 2),
+                        (cx + 1, cy - 2), (cx + 2, cy - 2), (cx + 3, cy - 2),
+                        (cx + 2, cy + 2), (cx + 3, cy + 2)]
+
+        ft_walls = four_walls + two_walls
+
+        if self.entry in ft_walls:
+                print(f"Wrong entry point: {self.entry}")
+                print(f"Forbiden: {ft_walls}")
+                return False #  return false to stop execution !
+        if self.exit in ft_walls:
+                print(f"Wrong exit point: {self.exit}")
+                print(f"Forbiden: {ft_walls}")
+                return False #  return false to stop execution
+        for item in ft_walls:
+                x, y = item
+                self.grid[y][x].visited = True
+        return True
 
 
 def load_config(file: str) -> Dict[str, Any]:
@@ -142,6 +181,18 @@ def load_config(file: str) -> Dict[str, Any]:
             print(f"Error in config file: {k}={v}\n{e}")
             return None
 
+    # Handle invalid entry and exit points
+    entry_x, entry_y = dict_config["ENTRY"]
+    exit_x, exit_y = dict_config["EXIT"]
+    w = dict_config["WIDTH"]
+    h = dict_config["HEIGHT"]
+    if entry_x < 0 or entry_y < 0 or entry_x > w - 1 or entry_y > h - 1:
+        print("Error: Entry point exceeds borders of the maze.")
+        return None
+    if exit_x < 0 or exit_y < 0 or exit_x > w - 1 or exit_y > h - 1:
+        print("Error: Exit point exceeds borders of the maze.")
+        return None
+
     return dict_config
 
 
@@ -168,20 +219,6 @@ def main() -> None:
     print("The config dict:\n")
     for key, value in config.items():
         print(f"  {key}: {value}")
-    print()
-
-    # print the attributes of my maze:
-    print("The maze attributes:\n")
-    for key, value in vars(my_maze).items():
-        if key == "grid":
-            print(f"  {key}: ")
-            for item in value:
-                print("  ", end='')
-                for it in item:
-                    print(f"{it.coord}", end='')
-                print()
-        else:
-            print(f"  {key}: {value}")
     print()
     
     print("The maze hex representation:\n")
