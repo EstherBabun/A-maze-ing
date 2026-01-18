@@ -8,3 +8,13 @@ L’un des algorithmes les plus utilisés est le DFS récursif (backtracking) :
 - On casse le mur entre les deux cellules
 - On recommence jusqu’à ce que toutes les cellules soient visitées
 - Le résultat est un labyrinthe parfait (un seul chemin entre deux points).
+
+brouillon 
+    def external_walls(self) -> None:
+        """To put external walls and print the map empty"""
+        for x in range(self.cols):
+            self.grid[0][x].walls["N"] = 1
+            self.grid[self.rows - 1][x].walls["S"] = 1
+        for y in range(self.rows):
+            self.grid[y][0].walls["W"] = 1
+            self.grid[y][self.cols - 1].walls["E"] = 1

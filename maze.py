@@ -25,6 +25,7 @@ class Cell(object):
         current (bool): True if this is the current cell
         visited (bool): True if the cell has been checked already
     """
+    non_visited = []
 
     def __init__(self, x: int, y: int) -> None:
         """Initialise the attributes of a cell."""
@@ -34,6 +35,7 @@ class Cell(object):
         self.is_extry: bool = False
         self.current: bool = False
         self.visited: bool = False
+        Cell.non_visited.append(self)
 
     @property
     def hex_repr(self) -> str:
@@ -49,7 +51,7 @@ class Cell(object):
         return hex_repr
 
 
-class Maze:  # No need anymore ?
+class Maze:
     """A class for the maze attributes and methods."""
 
     def __init__(self, config: Dict[str, Any]) -> None:
@@ -62,25 +64,87 @@ class Maze:  # No need anymore ?
         self.path: str = ""
         self.grid: List[List[Cell]] = [[Cell(x, y) for x in range(self.cols)]
                                        for y in range(self.rows)]
-        # self.maze: ?
 
-    def external_walls(self) -> None:
-        """To put external walls and print the map empty"""
-        for x in range(self.cols):
-            self.grid[0][x].walls["N"] = 1
-            self.grid[self.rows - 1][x].walls["S"] = 1
-        for y in range(self.rows):
-            self.grid[y][0].walls["W"] = 1
-            self.grid[y][self.cols - 1].walls["E"] = 1
+    def random_cell(self) -> Cell:
+        """To randomly choice a non visited cell in the grid"""
+        return random.choice(Cell.non_visited)
+
+    def neighbors_cells(self, cell) -> tuple:
+        """To define all allowed neighbors cells and her direction"""
+        nearby_cell = []
+        x, y = cell
+
+        if x > 0:
+            nearby_cell.append((self.grid[y][x - 1], "W"))
+        if x < self.cols - 1:
+            nearby_cell.append((self.grid[y][x + 1], "E"))
+        if y > 0:
+            nearby_cell.append((self.grid[y - 1][x], "N"))
+        if y < self.rows - 1:
+            nearby_cell.append((self.grid[y + 1][x], "S"))
+        return random.choice(nearby_cell)
+
+    def walk(self, curr_cell: Cell) -> Dict[tuple, str]:
+        """walk on until found the maze without loop"""
+        DX = {"E": 1, "W": -1, "N": 0, "S": 0}
+        DY = {"E": 0, "W": 0, "N": -1, "S": 1}
+        cx, cy = curr_cell.coord
+        print(curr_cell.coord)
+        cell_visited = {(cx, cy): 0}
+        path = []
+        walking = True
+
+        while walking:
+            # Loop detection
+            if curr_cell in path:
+                loop_start_idx = path.index(curr_cell.coord)
+                path = path[:loop_start_idx + 1]
+            else:
+                path.append(curr_cell.coord)
+
+            # random choice of neighbors cells
+            next_cell = self.neighbors_cells(curr_cell.coord)
+            next, dir = next_cell
+            print(next.coord)
+            if next.visited:
+                break
+            else:
+                cell_visited[next.coord] = dir
+                path.append(next.coord)
+                curr_cell = next
+
+        print(cell_visited)
+        # écraser dans path le chemin à faire d'après le dictionnaire!
+        # et avancer avec les dir etc
+
+        return path
+
+    def Wilson_algorithm(self):
+        """Wilson algorithm to generate an uniform random maze"""
+        # Premier îlot du labyrinthe
+        x, y = self.entry
+        self.grid[y][x].visited = True
+        Cell.non_visited.remove(self.grid[y][x])
+
+        # Se promener au hasard jusqu'à ce que tout soit visité
+        # - while à ajouter !!
+        random_cell = self.random_cell()
+        path = self.walk(random_cell)
+        for coord in path:
+            x, y = coord
+            self.grid[y][x].visited = True
+
+        # next step: ajouter le path au labyrinthe !
 
     def print_grid_hexa(self) -> None:
         """To print in hexa the grid of the maze"""
         for y in range(self.rows):
             row = ""
             for x in range(self.cols):
-                if Cell(x, y).visitedcond is True:
+                if self.grid[y][x].visited:
                     row += "G"
-                row += self.grid[y][x].hex_repr
+                else:
+                    row += self.grid[y][x].hex_repr
             print(row)
 
     def block_42_walls(self) -> bool:
@@ -128,83 +192,7 @@ class Maze:  # No need anymore ?
 
 
 class MazeGenerator:
-    """A class for the maze attributes and methods."""
-
-    def __init__(self, config: Dict[str, Any]) -> None:
-        """Initialise the attributes of the maze with the loaded config."""
-        self.cols: int = config["WIDTH"]
-        self.rows: int = config["HEIGHT"]
-        self.tot_size: int = config["WIDTH"]*config["HEIGHT"]
-        self.entry: tuple = config["ENTRY"]
-        self.exit: tuple = config["EXIT"]
-        self.path: str = ""
-        self.grid: List[List[Cell]] = [[Cell(x, y) for x in range(self.cols)]
-                                       for y in range(self.rows)]
-
-    def random_choice_depart(self) -> Cell:
-        """To randomly choice a non visited cell in the grid"""
-        non_visited = []
-        for row in self.grid:
-            for cell in row:
-                if not cell.visited:
-                    non_visited.append(cell)
-        return random.choice(non_visited)
-
-    def neighbors_cells(self, cell) -> list[Cell]:
-        """To define all neighbors cells of a target one"""
-        x, y = cell
-        nearby_cell = []
-
-        if x > 0:  # gauche
-            nearby_cell.append(self.grid[y][x - 1])
-        if x < self.cols - 1:  # droite
-            nearby_cell.append(self.grid[y][x + 1])
-        if y > 0:  # haut
-            nearby_cell.append(self.grid[y - 1][x])
-        if y < self.rows - 1:  # bas
-            nearby_cell.append(self.grid[y + 1][x])
-        return nearby_cell
-
-    def random_walk(self, start: Cell) -> list[Cell]:
-        """walk on until found the maze without loop"""
-        cell_in_path = set()
-        path = [start]
-        cell = start
-
-        while not cell.visited:
-            nxt = random.choice(self.neighbors_cells(cell.coord))
-
-            if nxt.coord in cell_in_path:
-                path = [start]
-                cell = start
-                cell_in_path = set()
-            else:
-                cell_in_path.add(nxt.coord)
-                path.append(nxt)
-                cell = nxt
-        return path
-
-    def Wilson_algorithm(self):
-        """Wilson algorithm to generate a beautiful random maze"""
-        # Premier îlot du labyrinthe
-        x, y = self.entry
-        self.grid[y][x].visited = True
-
-        # Se promener au hasard
-        choice_cell = self.random_choice_depart()
-        path = self.random_walk(choice_cell)
-        # next step: ajouter le path au labyrinthe ! 
-
-    def print_grid_hexa(self) -> None:
-        """To print in hexa the grid of the maze"""
-        for y in range(self.rows):
-            row = ""
-            for x in range(self.cols):
-                if self.grid[y][x].visited:
-                    row += "G"
-                else:
-                    row += self.grid[y][x].hex_repr
-            print(row)
+    """??? A quoi ça sert ???"""
 
 
 def load_config(file: str) -> Dict[str, Any]:
@@ -299,11 +287,11 @@ def main() -> None:
     if config is None:
         return
 
-    # my_maze: Maze = Maze(config)
+    my_maze: Maze = Maze(config)
     print("\n=== Test pour Wilson ===\n")
-    maze = MazeGenerator(config)
-    maze.Wilson_algorithm()
-    maze.print_grid_hexa()
+    my_maze.Wilson_algorithm()
+    my_maze.print_grid_hexa()
+    print(len(Cell.non_visited))
 
 
 if __name__ == "__main__":
