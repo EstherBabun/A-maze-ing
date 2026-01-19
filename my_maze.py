@@ -578,7 +578,6 @@ def main() -> None:
 
     # generate maze passing "DFS" or "Wilson" as argument
     my_maze.generate_maze("DFS-ITER")
-    #get walled neighbors
     my_maze.print_maze_visual()
     print(my_maze.hex_repr)
 
