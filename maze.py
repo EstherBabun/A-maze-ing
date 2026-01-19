@@ -25,17 +25,15 @@ class Cell(object):
         current (bool): True if this is the current cell
         visited (bool): True if the cell has been checked already
     """
-    non_visited = []
 
     def __init__(self, x: int, y: int) -> None:
         """Initialise the attributes of a cell."""
         self.coord: tuple = (x, y)
-        self.walls: Dict[str, int] = {"W": 0, "S": 0, "E": 0, "N": 0}
+        self.walls: Dict[str, int] = {"W": 1, "S": 1, "E": 1, "N": 1}
         self.common: List[Cell] = []
         self.is_extry: bool = False
         self.current: bool = False
         self.visited: bool = False
-        Cell.non_visited.append(self)
 
     @property
     def hex_repr(self) -> str:
@@ -53,6 +51,8 @@ class Cell(object):
 
 class Maze:
     """A class for the maze attributes and methods."""
+    DX = {"E": 1, "W": -1, "N": 0, "S": 0}
+    DY = {"E": 0, "W": 0, "N": -1, "S": 1}
 
     def __init__(self, config: Dict[str, Any]) -> None:
         """Initialise the attributes of the maze with the loaded config."""
@@ -64,13 +64,24 @@ class Maze:
         self.path: str = ""
         self.grid: List[List[Cell]] = [[Cell(x, y) for x in range(self.cols)]
                                        for y in range(self.rows)]
+        self.non_visited = [cell for row in self.grid for cell in row]
+
+    def set_visited(self, x, y):
+        self.grid[y][x].visited = True
+        self.non_visited.remove(self.grid[y][x])
+
+    def set_walls(self, x, y, dir):
+        OPPOSITE = {"E": "W", "W": "E", "N": "S", "S": "N"}
+        nx, ny = x + Maze.DX[dir], y + Maze.DY[dir]
+        self.grid[y][x].walls[dir] = 0
+        self.grid[ny][nx].walls[OPPOSITE[dir]] = 0
 
     def random_cell(self) -> Cell:
         """To randomly choice a non visited cell in the grid"""
-        return random.choice(Cell.non_visited)
+        return random.choice(self.non_visited)
 
-    def neighbors_cells(self, cell) -> tuple:
-        """To define all allowed neighbors cells and her direction"""
+    def neighbors_cells(self, cell: Cell) -> tuple[Cell, str]:
+        """To pick a random cell in allowed neighbors and her direction"""
         nearby_cell = []
         x, y = cell
 
@@ -84,67 +95,60 @@ class Maze:
             nearby_cell.append((self.grid[y + 1][x], "S"))
         return random.choice(nearby_cell)
 
-    def walk(self, curr_cell: Cell) -> Dict[tuple, str]:
-        """walk on until found the maze without loop"""
-        DX = {"E": 1, "W": -1, "N": 0, "S": 0}
-        DY = {"E": 0, "W": 0, "N": -1, "S": 1}
-        cx, cy = curr_cell.coord
-        print(curr_cell.coord)
-        cell_visited = {(cx, cy): 0}
+    def Wilson_algorithm(self):
+        """Generate an uniform random maze using Wilson algorithm"""
+        # Premier îlot du labyrinthe
+        x, y = self.entry
+        self.set_visited(x, y)
+
+        # walk until every cell is visited
+        while len(self.non_visited) != 0:
+            random_cell = self.random_cell()
+            for x, y, dir in self.walk(random_cell):
+                self.set_visited(x, y)
+                self.set_walls(x, y, dir)
+
+    def walk(self, start_cell: Cell) -> List[tuple[int, int, str]]:
+        """walk on until founding a visited cell without looping"""
+        cx, cy = start_cell.coord
+        cell_visited = {}
         path = []
         walking = True
+        curr_cell = start_cell
 
         while walking:
-            # Loop detection
-            if curr_cell in path:
-                loop_start_idx = path.index(curr_cell.coord)
-                path = path[:loop_start_idx + 1]
-            else:
-                path.append(curr_cell.coord)
-
-            # random choice of neighbors cells
-            next_cell = self.neighbors_cells(curr_cell.coord)
-            next, dir = next_cell
-            print(next.coord)
+            # random choice in neighbors cells
+            next, dir = self.neighbors_cells(curr_cell.coord)
+            cell_visited[curr_cell.coord] = dir
             if next.visited:
                 break
+
+            # Loop detection
+            if next.coord in path:
+                loop_start_idx = path.index(next.coord)
+                path = path[:loop_start_idx + 1]
             else:
-                cell_visited[next.coord] = dir
                 path.append(next.coord)
                 curr_cell = next
 
-        print(cell_visited)
-        # écraser dans path le chemin à faire d'après le dictionnaire!
-        # et avancer avec les dir etc
-
+        # final way reconstruction
+        path = []
+        x, y = cx, cy
+        while (x, y) in cell_visited:
+            dir = cell_visited[(x, y)]
+            path.append((x, y, dir))
+            x, y = x + Maze.DX[dir], y + Maze.DY[dir]
         return path
-
-    def Wilson_algorithm(self):
-        """Wilson algorithm to generate an uniform random maze"""
-        # Premier îlot du labyrinthe
-        x, y = self.entry
-        self.grid[y][x].visited = True
-        Cell.non_visited.remove(self.grid[y][x])
-
-        # Se promener au hasard jusqu'à ce que tout soit visité
-        # - while à ajouter !!
-        random_cell = self.random_cell()
-        path = self.walk(random_cell)
-        for coord in path:
-            x, y = coord
-            self.grid[y][x].visited = True
-
-        # next step: ajouter le path au labyrinthe !
 
     def print_grid_hexa(self) -> None:
         """To print in hexa the grid of the maze"""
         for y in range(self.rows):
             row = ""
             for x in range(self.cols):
-                if self.grid[y][x].visited:
-                    row += "G"
-                else:
-                    row += self.grid[y][x].hex_repr
+                """ if self.grid[y][x].visited:
+                    row += "G" """
+                # else:
+                row += self.grid[y][x].hex_repr
             print(row)
 
     def block_42_walls(self) -> bool:
@@ -291,7 +295,6 @@ def main() -> None:
     print("\n=== Test pour Wilson ===\n")
     my_maze.Wilson_algorithm()
     my_maze.print_grid_hexa()
-    print(len(Cell.non_visited))
 
 
 if __name__ == "__main__":
