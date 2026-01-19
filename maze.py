@@ -34,6 +34,7 @@ class Cell(object):
         self.is_extry: bool = False
         self.current: bool = False
         self.visited: bool = False
+        self.untouchable: bool = False
 
     @property
     def hex_repr(self) -> str:
@@ -64,7 +65,11 @@ class Maze:
         self.path: str = ""
         self.grid: List[List[Cell]] = [[Cell(x, y) for x in range(self.cols)]
                                        for y in range(self.rows)]
-        self.non_visited = [cell for row in self.grid for cell in row]
+        self.block_42_walls()
+        self.non_visited = [
+            cell for row in self.grid
+            for cell in row if not cell.untouchable
+            ]
 
     def set_visited(self, x, y):
         self.grid[y][x].visited = True
@@ -85,13 +90,13 @@ class Maze:
         nearby_cell = []
         x, y = cell
 
-        if x > 0:
+        if x > 0 and not self.grid[y][x - 1].untouchable:
             nearby_cell.append((self.grid[y][x - 1], "W"))
-        if x < self.cols - 1:
+        if x < self.cols - 1 and not self.grid[y][x + 1].untouchable:
             nearby_cell.append((self.grid[y][x + 1], "E"))
-        if y > 0:
+        if y > 0 and not self.grid[y - 1][x].untouchable:
             nearby_cell.append((self.grid[y - 1][x], "N"))
-        if y < self.rows - 1:
+        if y < self.rows - 1 and not self.grid[y + 1][x].untouchable:
             nearby_cell.append((self.grid[y + 1][x], "S"))
         return random.choice(nearby_cell)
 
@@ -181,17 +186,8 @@ class Maze:
 
         ft_walls = four_walls + two_walls
 
-        if self.entry in ft_walls:
-            print(f"Wrong entry point: {self.entry}")
-            print(f"Forbiden: {ft_walls}")
-            return False  # return false to stop execution !
-        if self.exit in ft_walls:
-            print(f"Wrong exit point: {self.exit}")
-            print(f"Forbiden: {ft_walls}")
-            return False  # return false to stop execution
-        for item in ft_walls:
-            x, y = item
-            self.grid[y][x].visited = True
+        for x, y in ft_walls:
+            self.grid[y][x].untouchable = True
         return True
 
 
@@ -293,6 +289,7 @@ def main() -> None:
 
     my_maze: Maze = Maze(config)
     print("\n=== Test pour Wilson ===\n")
+    print(len(my_maze.non_visited))
     my_maze.Wilson_algorithm()
     my_maze.print_grid_hexa()
 
