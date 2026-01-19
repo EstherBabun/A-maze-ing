@@ -114,6 +114,10 @@ class Maze:
         # Validate and adjust entry/exit points
         self._validate_entry_exit(custom)
 
+        # Error message for "42" pattern if maze too small
+        if self.cols < 9 or self.rows < 7:
+            print("Error: Maze too small for “42” pattern")
+
         self.print_config(custom)
         return custom
 
@@ -241,22 +245,32 @@ class Maze:
         ft_walls: List[tuple] = self.get_42_cells(self.cols, self.rows)
         if self.entry in ft_walls:
             print(
-                f"Entry point is stuck in the 42 cells\n"
-                "Switching to default entry"
-            )
+                    f"Error: Entry point is stuck in the 42 cells\n"
+                    "Switching to default entry"
+                    )
             self.reset_default_extry("ENTRY", custom)
         if self.exit in ft_walls:
             print(
-                f"Exit point is stuck in the 42 cells\n"
-                "Switching to default exit"
-            )
+                    f"Error: Exit point is stuck in the 42 cells\n"
+                    "Switching to default exit"
+                    )
             self.reset_default_extry("EXIT", custom)
+
+        if self.entry == self.exit:
+            print("Error: Entry and exit cannot have the same coordinates")
+            if self.entry != (0, 0):
+                self.reset_default_extry("ENTRY", custom)
+                print("Switching to default entry")
+            if self.entry == self.exit:
+                self.reset_default_extry("EXIT", custom)
+                print("Switching to default exit")
+        
 
 
     def get_42_cells(self, w: int, h: int) -> List[tuple]:
         """Calculate the coordinates of the 42 cells."""
         if w < 9 or h < 7:
-                return [] #  No 42_walls, maze too small
+            return [] #  No 42_walls, maze too small
         cx: int = (w - 1) // 2 if w % 2 == 0 else w // 2
         cy: int = (h - 1) // 2 if h % 2 == 0 else h // 2
 
@@ -283,37 +297,176 @@ class Maze:
             return self.grid[y][x]
         return None
 
-    def get_unvisited_neighbors(self, cell: Cell) -> List[tuple]:
-        """get all unvisited cells that have common wall with current cell."""
+    def get_all_neighbors(self, cell: Cell) -> List[tuple]:
+        """get all neighbor cells of a given cell."""
         neighbors: List[tuple] = []
         x, y = cell.coord
         for direction, (ox, oy) in self.offset.items():
             nx, ny = x + ox, y + oy
             neighbor: Cell = self.get_cell(nx, ny)
-            if neighbor and not neighbor.visited:
+            if neighbor:
                 neighbors.append((direction, neighbor))
         return neighbors
+
+    def get_unvisited_neighbors(self, cell: Cell) -> List[tuple]:
+        """get all unvisited cells that have common wall with current cell."""
+        neighbors: List[tuple] = self.get_all_neighbors(cell)
+        unvisited: List[tuple] = []
+        for direction, neighbor in neighbors:
+            if not neighbor.visited:
+                unvisited.append((direction, neighbor))
+        return unvisited
+    
+    def get_walled_neighbors(self, cell: Cell) -> List[tuple]:
+        """Get all the neighbors that still have a wall."""
+        neighbors: List[tuple] = self.get_all_neighbors(cell)
+        walled: List[tuple] = []
+        for direction, neighbor in neighbors:
+            if cell.walls[direction] == 1:
+                walled.append((direction, neighbor))
+        return walled
 
     def delete_wall(self, cell: Cell, neighbor: Cell, direction: str) -> None:
         """Delete wall between two cells."""
         cell.walls[direction] = 0
         adj: str = self.adjacent[direction]
         neighbor.walls[adj] = 0
-    
-    def generate_maze(self) -> bool:
-        """Generate maze with dfs backtracking."""
-        # set entry point:
-        entry_x, entry_y = self.entry 
-        # block access to 42 walls
-        self.block_42_walls()
 
-        stack = []
+   # # Note: I tried to use flood fill to calculate the max area 
+   # # but it doesn't produce imperfect maze anymore... why?
+
+   # def get_open_area(self, start_x: int, start_y: int) -> tuple:
+   #     """Calculeate the area of the opened corridor."""
+   #     checked: set = set()
+   #     queue = [(start_x, start_y)]
+   #     checked.add(self.get_cell(start_x, start_y))
+
+   #     max_x = min_x = start_x
+   #     max_y = min_y = start_y
+
+   #     while queue:
+   #         x, y = queue.pop(0)
+   #         current = self.get_cell(x, y)
+   #         min_x = min(x, min_x)
+   #         max_x = max(x, max_x)
+   #         min_y = min(y, min_y)
+   #         max_y = max(y, max_y)
+   #         neighbors: List[tuples] = self.get_all_neighbors(current)
+   #         for direction, neighbor in neighbors:
+   #             if neighbor not in checked and current.walls[direction] == 0:
+   #                 checked.add(neighbor)
+   #                 queue.append(neighbor.coord)
+   #     width = max_x - min_x + 1
+   #     height = max_y - min_y + 1
+   #     return (width, height)
+
+   # def check_bad_area(self, cell: Cell, neighbor: Cell, direction: str) -> bool:
+   #     """Check if removing the wall would create a too large area."""
+   #     # Temporarily remove the wall
+   #     self.delete_wall(cell, neighbor, direction)
+
+   #     # Check the open area size from both cells
+   #     x1, y1 = cell.coord
+   #     x2, y2 = neighbor.coord
+
+   #     width, height = self.get_open_area(x1, y1)
+
+   #     # Restore the wall
+   #     cell.walls[direction] = 1
+   #     adj = self.adjacent[direction]
+   #     neighbor.walls[adj] = 1
+
+   #     # Check if area exceeds 2x3 or 3x2
+   #     if width > 2 and height > 2:
+   #         return True
+
+   #     return False
+
+   # def make_imperfect(self) -> None:
+   #     """Remove additional walls to make the maze imperfect."""
+   #     blocked_cells: int = len(self.get_42_cells(self.cols, self.rows))
+   #     tot_cells: int = self.tot_size
+   #     valid_cells: int = tot_cells - blocked_cells
+
+   #     # remove walls in 10% of accessible cells
+   #     max_removable: int = int(valid_cells * 0.9)
+
+   #     # Collect all cells (excluding 42 cells)
+   #     all_cells: List[Cell] = []
+   #     ft_walls = self.get_42_cells(self.cols, self.rows)
+   #     for y in range(self.rows):
+   #         for x in range(self.cols):
+   #             if (x, y) not in ft_walls:
+   #                 all_cells.append(self.grid[y][x])
+
+   #     random.shuffle(all_cells)
+   #     walls_removed = 0
+
+   #     for cell in all_cells:
+   #         if walls_removed >= max_removable:
+   #             break
+   #         walled_neighbors = self.get_walled_neighbors(cell)
+   #         if walled_neighbors:
+   #             # Randomly pick a wall to remove
+   #             random.shuffle(walled_neighbors)
+   #             for direction, neighbor in walled_neighbors:
+   #                 # check that it's not in the 42 pattern and that it wouldn't create a too large area
+   #                 if neighbor.coord not in ft_walls and not self.check_bad_area(cell, neighbor, direction):
+   #                     self.delete_wall(cell, neighbor, direction)
+   #                     walls_removed += 1
+   #                     break
+
+    def make_imperfect(self) -> None:
+        """Remove additional walls to make the maze imperfect."""
+        blocked_cells: int = len(self.get_42_cells(self.cols, self.rows))
+        tot_cells: int = self.tot_size
+        valid_cells: int = tot_cells - blocked_cells
+
+        # remove walls in 20% of accessible cells
+        max_removable: int = int(valid_cells * 0.2)
+
+        # Collect all cells (excluding 42 cells)
+        all_cells: List[Cell] = []
+        ft_walls = self.get_42_cells(self.cols, self.rows)
+        for y in range(self.rows):
+            for x in range(self.cols):
+                if (x, y) not in ft_walls:
+                    all_cells.append(self.grid[y][x])
+        random.shuffle(all_cells)
+        walls_removed = 0
+
+        for cell in all_cells:
+            if walls_removed >= max_removable:
+                break
+
+            walled_neighbors = self.get_walled_neighbors(cell) 
+            if walled_neighbors:
+                # Randomly pick a wall to remove
+                direction, neighbor = random.choice(walled_neighbors)
+                if neighbor.coord not in ft_walls:
+                    self.delete_wall(cell, neighbor, direction)
+                    walls_removed += 1
+
+
+    def _recursive_DFS(self, cell: Cell) -> None:
+        """Apply recursive DFS algo."""
+        cell.visited = True
+
+        while True:
+            neighbors = self.get_unvisited_neighbors(cell)
+            if not neighbors:
+                return
+            direction, neighbor = random.choice(neighbors)
+            self.delete_wall(cell, neighbor, direction)
+            self._recursive_DFS(neighbor)
+
+    def _iter_DFS(self, entry: tuple) -> None:
+        """Apply iterative DFS algo."""
+        stack: List[Cell] = []
+        entry_x, entry_y = entry
         current = self.get_cell(entry_x, entry_y)
         current.visited = True
         n_visited = 1
-        # set seed if configured
-        if self.seed is not None:
-            random.seed(self.seed)
 
         while n_visited < self.tot_size:
             neighbors = self.get_unvisited_neighbors(current)
@@ -330,13 +483,29 @@ class Maze:
                 else:
                     break
 
+    
+    def generate_maze(self, algo: str) -> None:
+        """Generate maze with dfs backtracking."""
+        # block access to 42 walls
+        self.block_42_walls()
+
+        # set seed: custom if configured else None
+        random.seed(self.seed)
+
+        # select algo
+        if algo.upper() == "DFS-REC":
+            self._recursive_DFS(self.get_cell(*self.entry))
+        elif algo.upper() == "DFS-ITER":
+            self._iter_DFS(self.entry)
+        # elif algo.upper() == "WILSON": call wilson's algo
+        if not self.perfect:
+            self.make_imperfect()
+
         # mark entry and exit:
         entry_cell = self.get_cell(*self.entry)
         entry_cell.is_entry = True
         exit_cell = self.get_cell(*self.exit)
         exit_cell.is_exit = True
-        return True
-
 
     @property
     def hex_repr(self):
@@ -407,9 +576,9 @@ def main() -> None:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
         return
 
-    # generate maze
-    if my_maze.generate_maze() is False:
-        return
+    # generate maze passing "DFS" or "Wilson" as argument
+    my_maze.generate_maze("DFS-ITER")
+    #get walled neighbors
     my_maze.print_maze_visual()
     print(my_maze.hex_repr)
 
