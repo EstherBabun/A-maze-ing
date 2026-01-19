@@ -65,3 +65,5 @@ article on Wilson's algo : https://medium.com/@batbat.senturk/the-ultimate-unbia
 github : maze generating and solving https://github.com/batuSenturk/Mazes/?source=post_page-----46123d5fec76---------------------------------------
 
 Pour résoudre le maze : BFS - trouve le chemin le plus court et s'il n'y en a qu'un
+
+Ajouter Algorithm à la config ?

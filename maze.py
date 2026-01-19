@@ -134,7 +134,7 @@ class Maze:
                 path = path[:loop_start_idx + 1]
             else:
                 path.append(next.coord)
-                curr_cell = next
+            curr_cell = next
 
         # final way reconstruction
         path = []
@@ -144,17 +144,6 @@ class Maze:
             path.append((x, y, dir))
             x, y = x + Maze.DX[dir], y + Maze.DY[dir]
         return path
-
-    def print_grid_hexa(self) -> None:
-        """To print in hexa the grid of the maze"""
-        for y in range(self.rows):
-            row = ""
-            for x in range(self.cols):
-                """ if self.grid[y][x].visited:
-                    row += "G" """
-                # else:
-                row += self.grid[y][x].hex_repr
-            print(row)
 
     def block_42_walls(self) -> bool:
         """Prevent access to the 42 walls in the center of the maze."""
@@ -189,6 +178,18 @@ class Maze:
         for x, y in ft_walls:
             self.grid[y][x].untouchable = True
         return True
+
+    def export_to_txt(self, filename="maze.txt"):
+        """To generate a file with the maze in hexadecimal"""
+        try:
+            with open(filename, "w") as f:
+                for y in range(self.rows):
+                    line = ""
+                    for x in range(self.cols):
+                        line += self.grid[y][x].hex_repr
+                    f.write(line + "\n")
+        except Exception as e:
+            print(f"Erreur lors de l'écriture du fichier: {e}")
 
 
 class MazeGenerator:
@@ -291,7 +292,7 @@ def main() -> None:
     print("\n=== Test pour Wilson ===\n")
     print(len(my_maze.non_visited))
     my_maze.Wilson_algorithm()
-    my_maze.print_grid_hexa()
+    my_maze.export_to_txt()
 
 
 if __name__ == "__main__":
