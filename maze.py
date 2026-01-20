@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-# File: parsing.py
+# File: maze.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/15 18:33:22
 # Updated: 2026/01/15 18:33:22
-
 
 """Docstring to write. Version Morgane"""
 
@@ -30,9 +29,6 @@ class Cell(object):
         """Initialise the attributes of a cell."""
         self.coord: tuple = (x, y)
         self.walls: Dict[str, int] = {"W": 1, "S": 1, "E": 1, "N": 1}
-        self.common: List[Cell] = []
-        self.is_extry: bool = False
-        self.current: bool = False
         self.visited: bool = False
         self.untouchable: bool = False
 
@@ -59,17 +55,18 @@ class Maze:
         """Initialise the attributes of the maze with the loaded config."""
         self.cols: int = config["WIDTH"]
         self.rows: int = config["HEIGHT"]
-        self.tot_size: int = config["WIDTH"]*config["HEIGHT"]
-        self.entry: tuple = config["ENTRY"]
-        self.exit: tuple = config["EXIT"]
-        self.path: str = ""
+        self.seed: int | None = None
+        self.perfect: bool = config["PERFECT"]
+        self.algorithm = config["ALGORITHM"]
         self.grid: List[List[Cell]] = [[Cell(x, y) for x in range(self.cols)]
                                        for y in range(self.rows)]
         self.block_42_walls()
-        self.non_visited = [
+        self.non_visited: List[Cell] = [
             cell for row in self.grid
             for cell in row if not cell.untouchable
             ]
+        self.start = self.grid[config["ENTRY"][1]][config["ENTRY"][0]]
+        self.exit = self.grid[config["EXIT"][1]][config["EXIT"][0]]
 
     def set_visited(self, x, y):
         self.grid[y][x].visited = True
@@ -176,7 +173,10 @@ class Maze:
         ft_walls = four_walls + two_walls
 
         for x, y in ft_walls:
-            self.grid[y][x].untouchable = True
+            if self.algorithm == "Wilson":
+                self.grid[y][x].untouchable = True
+            elif self.algorithm == "DFS":
+                self.grid[y][x].visited = True
         return True
 
     def export_to_txt(self, filename="maze.txt"):
@@ -190,6 +190,49 @@ class Maze:
                     f.write(line + "\n")
         except Exception as e:
             print(f"Erreur lors de l'écriture du fichier: {e}")
+
+    def print_maze_visual(self):
+        """Print a visual ASCII representation of the maze."""
+        # Top border
+        print("┌" + "─" * (self.cols * 2 - 1) + "┐")
+
+        for y in range(self.rows):
+            # Print vertical walls
+            row = "│"
+            for x in range(self.cols):
+                cell = self.grid[y][x]
+
+                # Cell marker (entry/exit)
+                row += "S" if cell.is_entry else "E" if cell.is_exit else " "
+
+                # East wall
+                if cell.walls['E']:
+                    row += "│"
+                else:
+                    row += " "
+            print(row)
+
+            # Print horizontal walls (except after last row)
+            if y < self.rows - 1:
+                row = "├"
+                for x in range(self.cols):
+                    cell = self.grid[y][x]
+
+                    # South wall
+                    if cell.walls['S']:
+                        row += "─"
+                    else:
+                        row += " "
+
+                    # Corner
+                    if x < self.cols - 1:
+                        row += "┼"
+                    else:
+                        row += "┤"
+                print(row)
+
+        # Bottom border
+        print("└" + "─" * (self.cols * 2 - 1) + "┘")
 
 
 class MazeGenerator:
@@ -246,12 +289,18 @@ def load_config(file: str) -> Dict[str, Any]:
             # path name of the OUTPUT_FILE
             elif k.upper() == "OUTPUT_FILE":
                 dict_config[k] = v
+            # which algo is choosen
+            elif k == "ALGORITHM":
+                if v == "Wilson" or v == "DFS":
+                    dict_config[k] == v
+                else:
+                    raise ValueError(f'{k} expects "Wilson" or "DFS"')
 
             # discard invalid keys
             else:
                 raise ValueError(
                         "Expected: WIDTH, HEIGHT, ENTRY, "
-                        "EXIT, OUTPUT_FILE, PERFECT"
+                        "EXIT, OUTPUT_FILE, PERFECT", "ALGORITHM"
                         )
 
         except Exception as e:
@@ -291,8 +340,8 @@ def main() -> None:
     my_maze: Maze = Maze(config)
     print("\n=== Test pour Wilson ===\n")
     print(len(my_maze.non_visited))
-    my_maze.Wilson_algorithm()
-    my_maze.export_to_txt()
+    # my_maze.Wilson_algorithm()
+    print(my_maze.algorithm)
 
 
 if __name__ == "__main__":
