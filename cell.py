@@ -39,7 +39,8 @@ class Cell(object):
         self.visited: bool = False
         self._is_42: bool = False
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> tuple[int, int]:
+        """sub two coordonates"""
         return (self.coord[0] - other.coord[0], self.coord[1] - other.coord[1])
 
     @property
@@ -56,10 +57,12 @@ class Cell(object):
         return hex_repr
 
     def set_visited(self) -> None:
+        """set a cell to visited and remove it from unvisited list"""
         self.visited = True
         self.maze.unvisited.remove(self)
 
     def set_walls(self, dir) -> None:
+        """Delete the two walls in direction of the given path"""
         neighbor_cell = self.get_neighbor(dir)
         self.walls[dir] = 0
         neighbor_cell.walls[self.OPPOSITE[dir]] = 0
@@ -74,6 +77,7 @@ class Cell(object):
             raise ValueError("Cells are not adjacent")
 
     def get_neighbor(self, dir) -> Cell:
+        """Get the adjacent cell in the direction given"""
         x, y = self.coord
         nx, ny = x + self.OFFSET[dir][0], y + self.OFFSET[dir][1]
         return self.maze.grid[ny][nx]

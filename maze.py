@@ -13,7 +13,22 @@ from cell import Cell
 
 
 class Maze:
-    """A class for the maze attributes and methods."""
+    """A class for the maze attributes and methods.
+
+    Attributes:
+    - Attributes define by the loaded config:
+        cols (int): define the width of the maze
+        rows (int): define the height of the maze
+        seed (bool ?): ?
+        perfect (bool): True if there is juste one path between exit and start
+        algorithm (str) : define which algorithm to use to generate the maze
+    - Attributes created:
+        grid (list(list(Cell))): Create a Cell in every cell of the maze
+        unvisited (list(Cell)): a list of every unvisited cell without 42 block
+        start (Cell): Keep the starting Cell
+        exit (Cell): Keep the exit Cell
+    """
+
     offset: Dict[str, tuple] = {
             "N": (0, -1),
             "S": (0, 1),
@@ -27,7 +42,7 @@ class Maze:
         self.rows: int = config["HEIGHT"]
         self.seed: int | None = None
         self.perfect: bool = config["PERFECT"]
-        self.algorithm = config["ALGORITHM"]
+        self.algorithm: str = config["ALGORITHM"]
         self.grid: List[List[Cell]] = [
             [Cell(x, y, self) for x in range(self.cols)]
             for y in range(self.rows)]
@@ -36,15 +51,15 @@ class Maze:
             cell for row in self.grid
             for cell in row if not cell._is_42
             ]
-        self.start = self.grid[config["ENTRY"][1]][config["ENTRY"][0]]
-        self.exit = self.grid[config["EXIT"][1]][config["EXIT"][0]]
+        self.start: Cell = self.grid[config["ENTRY"][1]][config["ENTRY"][0]]
+        self.exit: Cell = self.grid[config["EXIT"][1]][config["EXIT"][0]]
 
     def random_cell(self) -> Cell:
         """To randomly choice a non visited cell in the grid"""
         return random.choice(self.unvisited)
 
     def get_neighbors_cells(self, cell: Cell) -> List[Cell]:
-        """Return all allowed neighbored cells"""
+        """Return all allowed neighbored cells without the 42 block cells"""
         nearby_cell = []
         x, y = cell.coord
 
@@ -58,7 +73,7 @@ class Maze:
             nearby_cell.append(self.grid[y + 1][x])
         return nearby_cell
 
-    def wilson(self):
+    def wilson(self) -> None:
         """Generate an uniform random maze using Wilson algorithm"""
         # Premier îlot du labyrinthe
         self.start.set_visited()
@@ -71,7 +86,7 @@ class Maze:
                 cell.set_walls(dir)
 
     def walk(self, start_cell: Cell) -> List[tuple[Cell, str]]:
-        """walk on until founding a visited cell without looping"""
+        """walk on until founding a path of unvisited cell without looping"""
         cell_visited = {}
         draft_path = []
         walking = True
@@ -170,7 +185,7 @@ class Maze:
         for x, y in ft_walls:
             self.grid[y][x]._is_42 = True
 
-    def export_to_txt(self, filename="maze.txt"):
+    def export_to_txt(self, filename="maze.txt") -> None:
         """To generate a file with the maze in hexadecimal"""
         try:
             with open(filename, "w") as f:
@@ -182,7 +197,7 @@ class Maze:
         except Exception as e:
             print(f"Erreur lors de l'écriture du fichier: {e}")
 
-    def print_maze_visual(self):
+    def print_maze_visual(self) -> None:
         """Print a visual ASCII representation of the maze."""
         # Top border
         print("┌" + "─" * (self.cols * 2 - 1) + "┐")
