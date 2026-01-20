@@ -9,11 +9,7 @@
 
 import sys
 from typing import Dict, Any
-from maze import Maze
-
-
-class MazeGenerator:
-    """??? A quoi ça sert ???"""
+from maze_generator import MazeGenerator
 
 
 def load_config(file: str) -> Dict[str, Any]:
@@ -114,10 +110,8 @@ def main() -> None:
     if config is None:
         return
 
-    my_maze: Maze = Maze(config)
-    my_maze.generate_maze()
-    # my_maze.print_maze_visual()
-    my_maze.export_to_txt()
+    my_maze: MazeGenerator = MazeGenerator(config)
+    my_maze.print_visual()
 
 
 if __name__ == "__main__":

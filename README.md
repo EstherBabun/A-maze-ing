@@ -66,4 +66,4 @@ github : maze generating and solving https://github.com/batuSenturk/Mazes/?sourc
 
 Pour résoudre le maze : BFS - trouve le chemin le plus court et s'il n'y en a qu'un
 
-Ajouter Algorithm à la config ?
+keyboard key: https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
