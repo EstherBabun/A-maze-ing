@@ -19,10 +19,8 @@ class Cell(object):
     Attributes:
         coord (tuple): the (x, y) coordinates or (col, row) coordinates
         walls (list): dict of the 4 wall status[W,S,E,N] (1=closed, 0=open)
-        common (list): list adjacent cells (x-1,y)(x+1,y)(x,y-1)(x,y+1)
-        is_extry (bool): True if the cell is the entry or the exit
-        current (bool): True if this is the current cell
         visited (bool): True if the cell has been checked already
+        untouchable (bool): True if the cell is a part of the 42 block
     """
 
     def __init__(self, x: int, y: int) -> None:
@@ -100,7 +98,7 @@ class Maze:
     def Wilson_algorithm(self):
         """Generate an uniform random maze using Wilson algorithm"""
         # Premier îlot du labyrinthe
-        x, y = self.entry
+        x, y = self.start.coord
         self.set_visited(x, y)
 
         # walk until every cell is visited
@@ -203,7 +201,7 @@ class Maze:
                 cell = self.grid[y][x]
 
                 # Cell marker (entry/exit)
-                row += "S" if cell.is_entry else "E" if cell.is_exit else " "
+                row += "S" if cell == self.start else "E" if cell == self.exit else " "
 
                 # East wall
                 if cell.walls['E']:
@@ -340,8 +338,8 @@ def main() -> None:
     my_maze: Maze = Maze(config)
     print("\n=== Test pour Wilson ===\n")
     print(len(my_maze.non_visited))
-    # my_maze.Wilson_algorithm()
-    print(my_maze.algorithm)
+    my_maze.Wilson_algorithm()
+    my_maze.print_maze_visual()
 
 
 if __name__ == "__main__":
