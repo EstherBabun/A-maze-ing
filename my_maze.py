@@ -8,7 +8,7 @@
 
 import sys
 import random
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 
 class Cell:
@@ -62,6 +62,7 @@ class Maze:
         self.perfect: bool = True
         self.entry: tuple = (0, 0)
         self.exit: tuple = (19, 9)
+        self.output_file = "maze.txt"
 
         # Track which settings came from config file
         custom: List[str] = []
@@ -87,7 +88,8 @@ class Maze:
             "ENTRY": self.entry,
             "EXIT": self.exit,
             "SEED": self.seed,
-            "PERFECT": self.perfect
+            "PERFECT": self.perfect,
+            "OUTPUT_FILE": self.output_file
         }
 
         for k, v in config_items.items():
@@ -493,9 +495,7 @@ class Maze:
         random.seed(self.seed)
 
         # select algo
-        if algo.upper() == "DFS-REC":
-            self._recursive_DFS(self.get_cell(*self.entry))
-        elif algo.upper() == "DFS-ITER":
+        if algo.upper() == "DFS":
             self._iter_DFS(self.entry)
         # elif algo.upper() == "WILSON": call wilson's algo
         if not self.perfect:
@@ -506,6 +506,7 @@ class Maze:
         entry_cell.is_entry = True
         exit_cell = self.get_cell(*self.exit)
         exit_cell.is_exit = True
+        self.export_to_txt()
 
     @property
     def hex_repr(self):
@@ -559,6 +560,14 @@ class Maze:
         # Bottom border
         print("└" + "─" * (self.cols * 2 - 1) + "┘")
 
+    def export_to_txt(self):
+        """To generate a file with the maze in hexadecimal"""
+        try:
+            with open(self.output_file, "w") as f:
+                    f.write(self.hex_repr)
+        except Exception as e:
+            print(f"Erreur lors de l'écriture du fichier: {e}")
+
    
 
 def main() -> None:
@@ -577,9 +586,8 @@ def main() -> None:
         return
 
     # generate maze passing "DFS" or "Wilson" as argument
-    my_maze.generate_maze("DFS-ITER")
+    my_maze.generate_maze("DFS")
     my_maze.print_maze_visual()
-    print(my_maze.hex_repr)
 
 
 if __name__ == "__main__":
