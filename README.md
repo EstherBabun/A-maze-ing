@@ -58,7 +58,35 @@ example:
 "PERFECT=True"
 
 Note: We may add additional keys (e.g., seed, algorithm, display mode) if useful.
+```
+<br/>
 
+# MLX for python3
 
+## Step1: Extract and install
 
+- Download  mlx-2.2-py3-ubuntu-any.whl form the project's page and move it to the project's root.
+- Extract and install the MLX wheel manually in the site-packages of our virtual environement (venv)
+
+Install in venv:
+```bash
+# Make sure you're in your project directory with venv activated
+cd ~/Desktop/A-maze-ing
+
+# Extract the wheel
+mkdir mlx_temp 
+cd mlx_temp
+unzip ../mlx-2.2-py3-ubuntu-any.whl
+
+# Copy to site-packages
+cp -r mlx ../venv/lib/python3.10/site-packages/
+cp -r mlx-2.2.dist-info ../venv/lib/python3.10/site-packages
+
+# Clean up
+cd ..
+rm -rf mlx_temp
+
+# Test
+python3 -c "import mlx; print('✓ MLX installed successfully!')"
+```
 
