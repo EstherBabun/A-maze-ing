@@ -3,7 +3,7 @@
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/15 18:33:22
-# Updated: 2026/01/15 18:33:22
+# Updated: 2026/01/20 18:02:15
 
 """Docstring to write. Version Morgane"""
 
@@ -20,7 +20,7 @@ class Cell(object):
         coord (tuple): the (x, y) coordinates or (col, row) coordinates
         walls (list): dict of the 4 wall status[W,S,E,N] (1=closed, 0=open)
         visited (bool): True if the cell has been checked already
-        untouchable (bool): True if the cell is a part of the 42 block
+        _is_42 (bool): True if the cell is a part of the 42 block
     """
 
     def __init__(self, x: int, y: int) -> None:
@@ -28,7 +28,7 @@ class Cell(object):
         self.coord: tuple = (x, y)
         self.walls: Dict[str, int] = {"W": 1, "S": 1, "E": 1, "N": 1}
         self.visited: bool = False
-        self.untouchable: bool = False
+        self._is_42: bool = False
 
     @property
     def hex_repr(self) -> str:
@@ -46,8 +46,12 @@ class Cell(object):
 
 class Maze:
     """A class for the maze attributes and methods."""
-    DX = {"E": 1, "W": -1, "N": 0, "S": 0}
-    DY = {"E": 0, "W": 0, "N": -1, "S": 1}
+    offset: Dict[str, tuple] = {
+            "N": (0, -1),
+            "S": (0, 1),
+            "E": (1, 0),
+            "W": (-1, 0)
+            }
 
     def __init__(self, config: Dict[str, Any]) -> None:
         """Initialise the attributes of the maze with the loaded config."""
@@ -59,41 +63,52 @@ class Maze:
         self.grid: List[List[Cell]] = [[Cell(x, y) for x in range(self.cols)]
                                        for y in range(self.rows)]
         self.block_42_walls()
-        self.non_visited: List[Cell] = [
+        self.unvisited: List[Cell] = [
             cell for row in self.grid
-            for cell in row if not cell.untouchable
+            for cell in row if not cell._is_42
             ]
         self.start = self.grid[config["ENTRY"][1]][config["ENTRY"][0]]
         self.exit = self.grid[config["EXIT"][1]][config["EXIT"][0]]
 
-    def set_visited(self, x, y):
+    def set_visited(self, x, y) -> None:
         self.grid[y][x].visited = True
-        self.non_visited.remove(self.grid[y][x])
+        self.unvisited.remove(self.grid[y][x])
 
-    def set_walls(self, x, y, dir):
+    def set_walls(self, x, y, dir) -> None:
         OPPOSITE = {"E": "W", "W": "E", "N": "S", "S": "N"}
-        nx, ny = x + Maze.DX[dir], y + Maze.DY[dir]
+        # nx, ny = x + Maze.DX[dir], y + Maze.DY[dir]
+        nx, ny = x + Maze.offset[dir][0], y + Maze.offset[dir][1]
         self.grid[y][x].walls[dir] = 0
         self.grid[ny][nx].walls[OPPOSITE[dir]] = 0
 
     def random_cell(self) -> Cell:
         """To randomly choice a non visited cell in the grid"""
-        return random.choice(self.non_visited)
+        return random.choice(self.unvisited)
 
-    def neighbors_cells(self, cell: Cell) -> tuple[Cell, str]:
-        """To pick a random cell in allowed neighbors and her direction"""
+    def get_neighbors_cells(self, cell: Cell) -> List[Cell]:
+        """Return all allowed neighbored cells"""
         nearby_cell = []
-        x, y = cell
+        x, y = cell.coord
 
-        if x > 0 and not self.grid[y][x - 1].untouchable:
-            nearby_cell.append((self.grid[y][x - 1], "W"))
-        if x < self.cols - 1 and not self.grid[y][x + 1].untouchable:
-            nearby_cell.append((self.grid[y][x + 1], "E"))
-        if y > 0 and not self.grid[y - 1][x].untouchable:
-            nearby_cell.append((self.grid[y - 1][x], "N"))
-        if y < self.rows - 1 and not self.grid[y + 1][x].untouchable:
-            nearby_cell.append((self.grid[y + 1][x], "S"))
-        return random.choice(nearby_cell)
+        if x > 0 and not self.grid[y][x - 1]._is_42:
+            nearby_cell.append(self.grid[y][x - 1])
+        if x < self.cols - 1 and not self.grid[y][x + 1]._is_42:
+            nearby_cell.append(self.grid[y][x + 1])
+        if y > 0 and not self.grid[y - 1][x]._is_42:
+            nearby_cell.append(self.grid[y - 1][x])
+        if y < self.rows - 1 and not self.grid[y + 1][x]._is_42:
+            nearby_cell.append(self.grid[y + 1][x])
+        return nearby_cell
+
+    def get_direction(self, current, next) -> str:
+        """Return the direction between two cells"""
+        dx = next.coord[0] - current.coord[0]
+        dy = next.coord[1] - current.coord[1]
+        for k, v in self.offset.items():
+            if v == (dx, dy):
+                return k
+        else:
+            raise ValueError("Cellules are not adjacents")
 
     def Wilson_algorithm(self):
         """Generate an uniform random maze using Wilson algorithm"""
@@ -102,7 +117,7 @@ class Maze:
         self.set_visited(x, y)
 
         # walk until every cell is visited
-        while len(self.non_visited) != 0:
+        while self.unvisited:
             random_cell = self.random_cell()
             for x, y, dir in self.walk(random_cell):
                 self.set_visited(x, y)
@@ -118,7 +133,8 @@ class Maze:
 
         while walking:
             # random choice in neighbors cells
-            next, dir = self.neighbors_cells(curr_cell.coord)
+            next = random.choice(self.get_neighbors_cells(curr_cell))
+            dir = self.get_direction(curr_cell, next)
             cell_visited[curr_cell.coord] = dir
             if next.visited:
                 break
@@ -137,8 +153,47 @@ class Maze:
         while (x, y) in cell_visited:
             dir = cell_visited[(x, y)]
             path.append((x, y, dir))
-            x, y = x + Maze.DX[dir], y + Maze.DY[dir]
+            # x, y = x + Maze.DX[dir], y + Maze.DY[dir]
+            x, y = x + Maze.offset[dir][0], y + Maze.offset[dir][1]
         return path
+
+    def _iter_DFS(self) -> None:
+        """Apply iterative DFS algo."""
+        stack: List[Cell] = []
+        current = self.start
+        sx, sy = current.coord
+        self.set_visited(sx, sy)
+
+        while self.unvisited:
+            neighbors = self.get_neighbors_cells(current)
+            cells_unvisited = list(set(self.unvisited) & set(neighbors))
+            if cells_unvisited:
+                next_cell = random.choice(cells_unvisited)
+                direction = self.get_direction(current, next_cell)
+                x, y = current.coord
+                self.set_walls(x, y, direction)
+                stack.append(current)
+                current = next_cell
+                x, y = current.coord
+                self.set_visited(x, y)
+            else:
+                if stack:
+                    current = stack.pop()
+                else:
+                    break
+
+    def generate_maze(self) -> None:
+        """Generate maze with the choosen algo."""
+        # set seed: custom if configured else None
+        random.seed(self.seed)
+
+        # select algo
+        if self.algorithm == "DFS":
+            self._iter_DFS()
+        elif self.algorithm == "Wilson":
+            self.Wilson_algorithm()
+
+        # a voir pour qu'il soit perfect plus tard!
 
     def block_42_walls(self) -> bool:
         """Prevent access to the 42 walls in the center of the maze."""
@@ -171,10 +226,7 @@ class Maze:
         ft_walls = four_walls + two_walls
 
         for x, y in ft_walls:
-            if self.algorithm == "Wilson":
-                self.grid[y][x].untouchable = True
-            elif self.algorithm == "DFS":
-                self.grid[y][x].visited = True
+            self.grid[y][x]._is_42 = True
         return True
 
     def export_to_txt(self, filename="maze.txt"):
@@ -336,10 +388,9 @@ def main() -> None:
         return
 
     my_maze: Maze = Maze(config)
-    print("\n=== Test pour Wilson ===\n")
-    print(len(my_maze.non_visited))
-    my_maze.Wilson_algorithm()
+    my_maze.generate_maze()
     my_maze.print_maze_visual()
+    # my_maze.export_to_txt() <- pour l'affichage à mettre dans generate maze ?
 
 
 if __name__ == "__main__":
