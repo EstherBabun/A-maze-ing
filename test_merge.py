@@ -8,7 +8,7 @@
 
 import sys
 import random
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 
 class Cell:
@@ -77,6 +77,12 @@ class Maze:
         self.path: str = ""
         self.grid: List[List[Cell]] = [[Cell(x, y) for x in range(self.cols)]
                                        for y in range(self.rows)]
+        self.untouchables: List[tuple] = self.get_42_cells(self.cols, self.rows)
+        self.block_42_walls()
+        self.non_visited = [
+            cell for row in self.grid
+            for cell in row if not cell.visited
+            ]
 
     def print_config(self, custom: List[str]) -> None:
         """Print final settings of the maze."""
@@ -283,12 +289,11 @@ class Maze:
                         (cx + 1, cy - 2), (cx + 2, cy - 2), (cx + 3, cy - 2),
                         (cx + 2, cy + 2), (cx + 3, cy + 2)]
 
-        ft_walls = four_walls + two_walls
-        return ft_walls
+        return four_walls + two_walls
     
     def block_42_walls(self) -> None:
         """Prevent access to the 42 walls in the center of the maze."""
-        for x, y in self.get_42_cells(self.cols, self.rows):
+        for x, y in self.untouchables:
             self.grid[y][x].visited = True
 
     def get_cell(self, x: int, y: int) -> Cell | None:
@@ -325,6 +330,15 @@ class Maze:
             if cell.walls[direction] == 1:
                 walled.append((direction, neighbor))
         return walled
+
+    def get_random_neighbor(self, cell: Cell) -> tuple[Cell, str]:
+        """To pick a random cell in allowed neighbors and her direction"""
+        neighbors: List[tuple] = self.get_all_neighbors(cell) 
+        return random.choice(neighbors)
+
+    def set_visited(self, x, y):
+        self.grid[y][x].visited = True
+        self.non_visited.remove(self.grid[y][x])
 
     def delete_wall(self, cell: Cell, neighbor: Cell, direction: str) -> None:
         """Delete wall between two cells."""
@@ -416,36 +430,35 @@ class Maze:
    #                     walls_removed += 1
    #                     break
 
-    def make_imperfect(self) -> None:
-        """Remove additional walls to make the maze imperfect."""
-        blocked_cells: int = len(self.get_42_cells(self.cols, self.rows))
-        tot_cells: int = self.tot_size
-        valid_cells: int = tot_cells - blocked_cells
+   # def make_imperfect(self) -> None:
+   #     """Remove additional walls to make the maze imperfect."""
+   #     blocked_cells: int = len(self.untouchables)
+   #     tot_cells: int = self.tot_size
+   #     valid_cells: int = tot_cells - blocked_cells
 
-        # remove walls in 20% of accessible cells
-        max_removable: int = int(valid_cells * 0.2)
+   #     # remove walls in 20% of accessible cells
+   #     max_removable: int = int(valid_cells * 0.2)
 
-        # Collect all cells (excluding 42 cells)
-        all_cells: List[Cell] = []
-        ft_walls = self.get_42_cells(self.cols, self.rows)
-        for y in range(self.rows):
-            for x in range(self.cols):
-                if (x, y) not in ft_walls:
-                    all_cells.append(self.grid[y][x])
-        random.shuffle(all_cells)
-        walls_removed = 0
+   #     # Collect all cells (excluding 42 cells)
+   #     all_cells: List[Cell] = []
+   #     for y in range(self.rows):
+   #         for x in range(self.cols):
+   #             if (x, y) not in self.untouchables:
+   #                 all_cells.append(self.grid[y][x])
+   #     random.shuffle(all_cells)
+   #     walls_removed = 0
 
-        for cell in all_cells:
-            if walls_removed >= max_removable:
-                break
+   #     for cell in all_cells:
+   #         if walls_removed >= max_removable:
+   #             break
 
-            walled_neighbors = self.get_walled_neighbors(cell) 
-            if walled_neighbors:
-                # Randomly pick a wall to remove
-                direction, neighbor = random.choice(walled_neighbors)
-                if neighbor.coord not in ft_walls:
-                    self.delete_wall(cell, neighbor, direction)
-                    walls_removed += 1
+   #         walled_neighbors = self.get_walled_neighbors(cell) 
+   #         if walled_neighbors:
+   #             # Randomly pick a wall to remove
+   #             direction, neighbor = random.choice(walled_neighbors)
+   #             if neighbor.coord not in self.untouchables:
+   #                 self.delete_wall(cell, neighbor, direction)
+   #                 walls_removed += 1
 
 
     def _recursive_DFS(self, cell: Cell) -> None:
@@ -468,7 +481,7 @@ class Maze:
         current.visited = True
         n_visited = 1
 
-        while n_visited < self.tot_size:
+        while n_visited < self.tot_size - len(self.untouchables):
             neighbors = self.get_unvisited_neighbors(current)
             if neighbors:
                 direction, next_cell = random.choice(neighbors)
@@ -483,21 +496,66 @@ class Maze:
                 else:
                     break
 
+    def wilson_algorithm(self):
+        """Generate an uniform random maze using Wilson algorithm"""
+        # Premier îlot du labyrinthe
+        entry_x, entry_y = self.entry
+        self.set_visited(entry_x, entry_y)
+
+        # walk until every cell is visited
+        while len(self.non_visited) != 0:
+            random_cell = random.choice(self.non_visited)
+            for x, y, dir in self.walk(random_cell):
+                self.set_visited(x, y)
+                current = self.get_cell(x, y)
+                ox, oy = self.offset[dir]
+                neighbor = self.get_cell(x + ox, y + oy)
+                self.delete_wall(current, neighbor, dir)
+
+    def walk(self, start_cell: Cell) -> List[tuple[int, int, str]]:
+        """walk on until finding a visited cell without looping"""
+        cx, cy = start_cell.coord
+        cell_visited = {}
+        path = []
+        walking = True
+        curr_cell = start_cell
+
+        while walking:
+            # random choice in neighbors cells
+            dir, next = self.get_random_neighbor(curr_cell)
+            cell_visited[curr_cell.coord] = dir
+            if next.visited:
+                break
+
+            # Loop detection
+            if next.coord in path:
+                loop_start_idx = path.index(next.coord)
+                path = path[:loop_start_idx]  # Remove the loop
+
+            path.append(next.coord)
+            curr_cell = next
+
+        # final way reconstruction
+        path = []
+        x, y = cx, cy
+        while (x, y) in cell_visited:
+            dir = cell_visited[(x, y)]
+            path.append((x, y, dir))
+            ox, oy = self.offset[dir]
+            x, y = x + ox, y + oy
+        return path
+
     
     def generate_maze(self, algo: str) -> None:
         """Generate maze with dfs backtracking."""
-        # block access to 42 walls
-        self.block_42_walls()
-
         # set seed: custom if configured else None
         random.seed(self.seed)
 
         # select algo
-        if algo.upper() == "DFS-REC":
-            self._recursive_DFS(self.get_cell(*self.entry))
-        elif algo.upper() == "DFS-ITER":
+        if algo.upper() == "WILSON":
+            self.wilson_algorithm()
+        elif algo.upper() == "DFS":
             self._iter_DFS(self.entry)
-        # elif algo.upper() == "WILSON": call wilson's algo
         if not self.perfect:
             self.make_imperfect()
 
@@ -577,7 +635,7 @@ def main() -> None:
         return
 
     # generate maze passing "DFS" or "Wilson" as argument
-    my_maze.generate_maze("DFS-ITER")
+    my_maze.generate_maze("DFS")
     my_maze.print_maze_visual()
     print(my_maze.hex_repr)
 
