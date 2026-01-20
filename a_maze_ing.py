@@ -162,9 +162,13 @@ class Maze:
         for k, v in raw_config.items():
             try:
                 if k == "WIDTH":
+                    if int(v) < 0:
+                        raise ValueError("width cannot be negative")
                     self.cols = int(v)
                     custom.append(k)
                 elif k == "HEIGHT":
+                    if int(v) < 0:
+                        raise ValueError("height cannot be negative")
                     self.rows = int(v)
                     custom.append(k)
                 elif k == "ENTRY":
