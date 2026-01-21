@@ -185,6 +185,23 @@ class MazeGenerator:
         for x, y in ft_walls:
             self.grid[y][x]._is_42 = True
 
+    @property
+    def hex_repr(self):
+        """To print in hexa the grid of the maze"""
+        maze_hex: str = ""
+        for y in range(self.rows):
+            maze_hex += "".join(self.grid[y][x].hex_repr for x in range(self.cols))
+            maze_hex += "\n"
+        return maze_hex
+
+    def export_to_txt(self) -> None:
+        """To generate a file with the maze in hexadecimal"""
+        try:
+            with open(self.output_file, "w") as f:
+                    f.write(self.hex_repr)
+        except Exception as e:
+            print(f"Erreur lors de l'écriture du fichier: {e}")
+
     def print_maze_visual(self) -> None:
         """Print a visual ASCII representation of the maze."""
         # Top border

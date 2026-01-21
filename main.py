@@ -111,7 +111,8 @@ def main() -> None:
         return
 
     my_maze: MazeGenerator = MazeGenerator(config)
-    my_maze.print_visual()
+    my_maze.generate_maze()
+    my_maze.print_maze_visual()
 
 
 if __name__ == "__main__":

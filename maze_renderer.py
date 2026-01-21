@@ -21,26 +21,13 @@ class Key(Enum):
 class MazeRenderer:
     """Create a window with a maze"""
 
-    def __init__(self, config):
-        self.maze = MazeGenerator(config)
-        self.maze.generate_maze()
-        self.filename = config["OUTPUT_FILE"]
-        self.file = self.export_to_txt(config["OUTPUT_FILE"])
+    def __init__(self, file):
+        self.filename = file
+        self.file = self.export_to_txt(file)
 
-    def print_visual(self):
-        self.maze.print_maze_visual()
+    def set_output():
+        pass
 
-    def export_to_txt(self) -> None:
-        """To generate a file with the maze in hexadecimal"""
-        try:
-            with open(self.filename, "w") as f:
-                for y in range(self.maze.rows):
-                    line = ""
-                    for x in range(self.maze.cols):
-                        line += self.maze.grid[y][x].hex_repr
-                    f.write(line + "\n")
-        except Exception as e:
-            print(f"Erreur lors de l'écriture du fichier: {e}")
 
     def open_file(self):
         try:
