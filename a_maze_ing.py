@@ -6,7 +6,6 @@
 # Updated: 2026/01/20 18:02:15
 
 from typing import Dict, List, Any, Optional
-from collections import deque
 import random
 from cell import Cell
 
@@ -397,31 +396,45 @@ class MazeGenerator:
                 walled.append((direction, neighbor))
         return walled
 
+    def get_dead_ends(self) -> List[Cell]:
+        """Find all cells with exactly 3 standing walls(dead-ends)."""
+        dead_ends: List[Cell] = []
+        for row in self.grid:
+            for cell in row:
+                if cell._is_42:
+                    continue
+                wall_count = sum(cell.walls.values())
+                if wall_count == 3:
+                    dead_ends.append(cell)
+        return dead_ends
+
     def make_imperfect(self) -> None:
-        """Remove additional walls to make the maze imperfect."""
+        """Remove walls from dead-end cells to make the maze imperfect.
 
-        # remove walls in 20% of accessible cells
-        max_removable: int = int(self.valid_cells * 0.2)
+        Args:
+        percentage: Fraction of dead-end cells to modify (0.0 to 1.0)
+        Keep low (<=0.2) to avoid creating open areas.
+        """
+        percentage: float = 0.2
+        dead_ends: List[Cell] = self.get_dead_ends()
+        max_removable: int = int(len(dead_ends) * percentage)
 
-        # Collect all cells (excluding 42 cells)
-        all_cells: List[Cell] = [cell for row in self.grid
-                                for cell in row 
-                                if not cell._is_42]
-        random.shuffle(all_cells)
+        random.shuffle(dead_ends)
         removed: int = 0
 
-        for cell in all_cells:
+        for cell in dead_ends:
             if removed >= max_removable:
                 break
-            walled_neighbors = self.get_walled_neighbors(cell) 
+
+            walled_neighbors = self.get_walled_neighbors(cell)
             if walled_neighbors:
-                # Randomly pick a wall to remove
                 direction, neighbor = random.choice(walled_neighbors)
                 cell.set_walls(direction)
                 removed += 1
-        print(f"Target walls to remove: {max_removable}")
-        print(f"Actually removed: {removed}")
 
+        # print(f"Dead-ends found: {len(dead_ends)}")
+        # print(f"Target walls to remove: {max_removable}")
+        # print(f"Actually removed: {removed}")
 
     def generate_maze(self) -> None:
         """Generate maze with the choosen algo."""
