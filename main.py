@@ -113,6 +113,7 @@ def main() -> None:
     my_maze: MazeGenerator = MazeGenerator(config)
     my_maze.generate_maze()
     my_maze.print_maze_visual()
+    my_maze.export_to_txt()
 
 
 if __name__ == "__main__":

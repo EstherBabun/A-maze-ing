@@ -43,6 +43,7 @@ class MazeGenerator:
         self.seed: int | None = None
         self.perfect: bool = config["PERFECT"]
         self.algorithm: str = config["ALGORITHM"]
+        self.output_file: str = config["OUTPUT_FILE"]
         self.grid: List[List[Cell]] = [
             [Cell(x, y, self) for x in range(self.cols)]
             for y in range(self.rows)]

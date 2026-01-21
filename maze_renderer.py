@@ -1,74 +1,113 @@
 #!/usr/bin/env python3
-# File: display_map.py
+# File: test_mlx.py
 # Author: ebabun <ebabun@student.42belgium.be>
-# Author: mmeurer <mmeurer@student.42belgium.be>
-# Created: 2026/01/20 18:33:22
-# Updated: 2026/01/20 18:02:15
+# Created: 2026/01/20 16:09:10
+# Updated: 2026/01/20 16:09:10
 
-# from mlx import Mlx
-from enum import Enum
-from a_maze_ing import MazeGenerator
-
-TILE_SIZE = 30
-COLOR_WALL = 0xFFFFFF
-COLOR_BG = 0x222222
-
-
-class Key(Enum):
-    ESCAPE = 0xff1b
-
+from mlx import Mlx
 
 class MazeRenderer:
-    """Create a window with a maze"""
+    """Renders maze using MLX Python bindings."""
 
-    def __init__(self, file):
-        self.filename = file
-        self.file = self.export_to_txt(file)
+    CELL_SIZE = 30
+    COLOR_WALL = 0xFFFFFF
+    COLOR_BG = 0x222222
 
-    def set_output():
-        pass
+    def __init__(self, width: int, height: int):
+        """
+        Initialize MLX renderer.
+
+        Args:
+            width: Maze width in cells
+            height: Maze height in cells
+            wall_thickness: width of walls
+        """
+        self.width = width
+        self.height = height
+        self.wall_thickness = 3
+
+        # Window dimensions
+        self.win_width = width * self.CELL_SIZE
+        self.win_height = height * self.CELL_SIZE
+
+        # Initialize MLX
+        self.m = Mlx()
+        self.ptr = self.m.mlx_init()
+
+        # Colors
+        self.COLOR_BLACK = 0x000000
+        self.COLOR_WHITE = 0xFFFFFF
+        self.COLOR_RED = 0xFF0000
+        self.COLOR_GREEN = 0x00FF00
+        self.COLOR_BLUE = 0x0066FF
+        self.COLOR_YELLOW = 0xFFFF00
+        self.COLOR_GRAY = 0xC0C0C0
 
 
-    def open_file(self):
-        try:
-            with open(self.filename, "r") as f:
-                lines = [line for line in f.readlines()]
-        except FileNotFoundError:
-            print(f"Erreur: le fichier {self.filename} est introuvable")
-            return
+    def mymouse(self, button, x, y, mystuff):
+        print(f"Got mouse event! button {button} at {x},{y}.")
 
-        win_height = len(lines) * TILE_SIZE
-        win_width = len(lines[0]) * TILE_SIZE
+    def mykey(self, keynum, mystuff, win_ptr):
+        print(f"Got key {keynum}, and got my stuff back:")
+        print(mystuff)
+        if keynum == 32:
+            self.m.mlx_mouse_hook(win_ptr, None, None)
+
+    def gere_close(self, dummy):
+        self.m.mlx_loop_exit(self.ptr)
+
+    def draw_square(self, mlx, win, x, y, size, color):
+        for i in range(size):
+            for j in range(size):
+                self.m.mlx_pixel_put(mlx, win, x + i, y + j, color)
+
+    def draw_maze(self, mlx, win, maze):
+        for y, row in enumerate(maze):
+            for x, cell in enumerate(row):
+                if cell == '1':
+                    color = self.COLOR_WALL
+                else:
+                    color = self.COLOR_BG
+
+                self.draw_square(
+                    mlx,
+                    win,
+                    x * self.TILE_SIZE,
+                    y * self.TILE_SIZE,
+                    self.TILE_SIZE,
+                    color
+                )
 
 
-""" def main():
-    m = Mlx()
-    mlx_ptr = m.mlx_init()
-
-    # Lire le fichier et calculer la taille
+def open_file(filename):
     try:
-        with open(FILE_PATH, "r") as f:
-            lines = [line for line in f.readlines()]
+        with open(filename, "r") as f:
+            lines = [line.rstrip("\n") for line in f.readlines()]
     except FileNotFoundError:
-        print(f"Erreur: le fichier {FILE_PATH} est introuvable")
+        print(f"Erreur: le fichier {filename} est introuvable")
         return
-
-    win_height = len(lines) * TILE_SIZE
-    win_width = len(lines[0]) * TILE_SIZE
-
-    # Créer la fenêtre
-    win_ptr = m.mlx_new_window(mlx_ptr, win_width, win_height, "Title")
-
-    # Gérer la fermeture (Echap pour quitter)
-    def handle_key(key):
-        if key == Key.ESCAPE:
-            exit(0)
-
-    m.mlx_key_hook(win_ptr, handle_key, None)
-
-    # Lancer la boucle infinie
-    m.mlx_loop(mlx_ptr) """
+    return lines
 
 
-""" if __name__ == "__main__":
-    main() """
+
+
+def main() -> None:
+    lines = open_file("maze.txt")
+    renderer = MazeRenderer(1080, 720)
+    #renderer = MazeRenderer(len(lines), len(lines[0]))
+    win_ptr = renderer.m.mlx_new_window(renderer.ptr, renderer.win_width, renderer.win_height, "A-maze-ing!")
+    renderer.m.mlx_clear_window(renderer.ptr, win_ptr)
+    renderer.m.mlx_string_put(renderer.ptr, win_ptr, 20, 20, 255, lines[0])  # pour les commandes
+    (ret, w, h) = renderer.m.mlx_get_screen_size(renderer.ptr)
+    print(f"Got screen size: {w} x {h} .")
+
+    stuff = [1, 2]
+    renderer.m.mlx_mouse_hook(win_ptr, renderer.mymouse, None)
+    renderer.m.mlx_key_hook(win_ptr, renderer.mykey, stuff)
+    renderer.m.mlx_hook(win_ptr, 33, 0, renderer.gere_close, None)
+
+    renderer.m.mlx_loop(renderer.ptr)
+
+
+if __name__ == "__main__":
+    main()
