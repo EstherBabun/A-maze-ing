@@ -409,12 +409,7 @@ class MazeGenerator:
         return dead_ends
 
     def make_imperfect(self) -> None:
-        """Remove walls from dead-end cells to make the maze imperfect.
-
-        Args:
-        percentage: Fraction of dead-end cells to modify (0.0 to 1.0)
-        Keep low (<=0.2) to avoid creating open areas.
-        """
+        """Remove walls from dead-end cells to make the maze imperfect."""
         percentage: float = 0.2
         dead_ends: List[Cell] = self.get_dead_ends()
         max_removable: int = int(len(dead_ends) * percentage)
