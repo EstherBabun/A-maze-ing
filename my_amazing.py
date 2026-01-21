@@ -10,7 +10,6 @@ import sys
 import random
 from typing import Dict, List, Any, Optional
 
-
 class Cell:
     """Class that holds the cell attributes in a 2D maze.
 
