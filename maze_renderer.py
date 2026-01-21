@@ -1,38 +1,55 @@
 #!/usr/bin/env python3
 # File: test_mlx.py
 # Author: ebabun <ebabun@student.42belgium.be>
+# Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/20 16:09:10
 # Updated: 2026/01/20 16:09:10
 
 from mlx import Mlx
 
+
 class MazeRenderer:
     """Renders maze using MLX Python bindings."""
 
     CELL_SIZE = 30
-    COLOR_WALL = 0xFFFFFF
-    COLOR_BG = 0x222222
+    COLOR_WALL = 0x00CC00
+    COLOR_BG = 0x999999
+    COLOR_42 = 0x003300
+    WALL_THICKNESS = 3
 
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int, hexa: list[list]):
         """
         Initialize MLX renderer.
 
         Args:
             width: Maze width in cells
             height: Maze height in cells
+        Attributs:
+            width, height : size of the window
+            img_width, img_height : size of the maze
             wall_thickness: width of walls
+            ptr: MLX instance
+            win_ptr: Window identifier
+            img_ptr: Image identifier
         """
-        self.width = width
-        self.height = height
-        self.wall_thickness = 3
 
-        # Window dimensions
-        self.win_width = width * self.CELL_SIZE
-        self.win_height = height * self.CELL_SIZE
+        if height > width:
+            self.height = height * self.CELL_SIZE
+            self.width = int(width * self.CELL_SIZE * 1.60)
+        else:
+            self.width = width * self.CELL_SIZE
+            self.height = int(height * self.CELL_SIZE * 1.60)
+        self.content = hexa
+
+        # Maze dimensions
+        self.img_width = width * self.CELL_SIZE
+        self.img_height = height * self.CELL_SIZE
 
         # Initialize MLX
         self.m = Mlx()
         self.ptr = self.m.mlx_init()
+        self.win_ptr = self.m.mlx_new_window(self.ptr, self.width, self.height, "=== A-maze-ing ===!")
+        self.img_ptr = self.m.mlx_new_image(self.ptr, self.img_width, self.img_height)
 
         # Colors
         self.COLOR_BLACK = 0x000000
@@ -42,7 +59,6 @@ class MazeRenderer:
         self.COLOR_BLUE = 0x0066FF
         self.COLOR_YELLOW = 0xFFFF00
         self.COLOR_GRAY = 0xC0C0C0
-
 
     def mymouse(self, button, x, y, mystuff):
         print(f"Got mouse event! button {button} at {x},{y}.")
@@ -56,27 +72,99 @@ class MazeRenderer:
     def gere_close(self, dummy):
         self.m.mlx_loop_exit(self.ptr)
 
-    def draw_square(self, mlx, win, x, y, size, color):
-        for i in range(size):
-            for j in range(size):
-                self.m.mlx_pixel_put(mlx, win, x + i, y + j, color)
+    def my_mlx_pixel_put(self, data, x, y, color, line_length, bpp):
+        """Fast pixel writing to image buffer."""
+        if x >= 0 and y >= 0:  # Basic bounds checking
+            offset = y * line_length + x * (bpp // 8)
+            # Write color in BGR format
+            data[offset] = color & 0xFF                 # Blue
+            data[offset + 1] = (color >> 8) & 0xFF      # Green
+            data[offset + 2] = (color >> 16) & 0xFF     # Red
+            data[offset + 3] = 255                      # Alpha
 
-    def draw_maze(self, mlx, win, maze):
-        for y, row in enumerate(maze):
-            for x, cell in enumerate(row):
-                if cell == '1':
-                    color = self.COLOR_WALL
+    def draw_cell(self, data, size_line, bpp, i, j, color):
+        """Fast pixel writing to image buffer."""
+        start_y = i * self.CELL_SIZE
+        start_x = j * self.CELL_SIZE
+
+        for y in range(start_y, start_y + self.CELL_SIZE):
+            for x in range(start_x, start_x + self.CELL_SIZE):
+                self.my_mlx_pixel_put(data, x, y, color, size_line, bpp)
+
+    def draw_north_wall(self, data, size_line, bpp, i, j):
+        start_y = i * self.CELL_SIZE
+        start_x = j * self.CELL_SIZE
+        # end_y = start_y + self.CELL_SIZE
+        end_x = start_x + self.CELL_SIZE
+        wall = self.COLOR_WALL
+        t = self.WALL_THICKNESS  # largeur du mur
+
+        # Haut
+        for y in range(start_y, start_y + t):
+            for x in range(start_x, end_x):
+                self.my_mlx_pixel_put(data, x, y, wall, size_line, bpp)
+
+    def draw_south_wall(self, data, size_line, bpp, i, j):
+        start_y = i * self.CELL_SIZE
+        start_x = j * self.CELL_SIZE
+        end_y = start_y + self.CELL_SIZE
+        end_x = start_x + self.CELL_SIZE
+        wall = self.COLOR_WALL
+        t = self.WALL_THICKNESS  # largeur du mur
+
+        # Bas
+        for y in range(end_y - t, end_y):
+            for x in range(start_x, end_x):
+                self.my_mlx_pixel_put(data, x, y, wall, size_line, bpp)
+
+    def draw_east_wall(self, data, size_line, bpp, i, j):
+        start_y = i * self.CELL_SIZE
+        start_x = j * self.CELL_SIZE
+        end_y = start_y + self.CELL_SIZE
+        end_x = start_x + self.CELL_SIZE
+        wall = self.COLOR_WALL
+        t = self.WALL_THICKNESS  # largeur du mur
+
+        # Droite
+        for x in range(end_x - t, end_x):
+            for y in range(start_y, end_y):
+                self.my_mlx_pixel_put(data, x, y, wall, size_line, bpp)
+
+    def draw_west_wall(self, data, size_line, bpp, i, j):
+        start_y = i * self.CELL_SIZE
+        start_x = j * self.CELL_SIZE
+        end_y = start_y + self.CELL_SIZE
+        # end_x = start_x + self.CELL_SIZE
+        wall = self.COLOR_WALL
+        t = self.WALL_THICKNESS  # largeur du mur
+
+        # Gauche
+        for x in range(start_x, start_x + t):
+            for y in range(start_y, end_y):
+                self.my_mlx_pixel_put(data, x, y, wall, size_line, bpp)
+
+    def create_image(self, lines):
+        data, bpp, size_line, endian = self.m.mlx_get_data_addr(self.img_ptr)
+
+        # Draw cases
+        for i, line in enumerate(lines):
+            for j, cell in enumerate(line):
+                if cell == 'F':
+                    self.draw_cell(data, size_line, bpp, i, j, self.COLOR_42)
                 else:
-                    color = self.COLOR_BG
+                    self.draw_cell(data, size_line, bpp, i, j, self.COLOR_BG)
+                # Draw walls
+                if cell in "13579BD":
+                    self.draw_north_wall(data, size_line, bpp, i, j)
+                if cell in "4567CDE":
+                    self.draw_south_wall(data, size_line, bpp, i, j)
+                if cell in "2367ABE":
+                    self.draw_east_wall(data, size_line, bpp, i, j)
+                if cell in "89ABCDE":
+                    self.draw_west_wall(data, size_line, bpp, i, j)
 
-                self.draw_square(
-                    mlx,
-                    win,
-                    x * self.TILE_SIZE,
-                    y * self.TILE_SIZE,
-                    self.TILE_SIZE,
-                    color
-                )
+        # Display the image
+        self.m.mlx_put_image_to_window(self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
 
 def open_file(filename):
@@ -89,22 +177,21 @@ def open_file(filename):
     return lines
 
 
-
-
 def main() -> None:
     lines = open_file("maze.txt")
-    renderer = MazeRenderer(1080, 720)
-    #renderer = MazeRenderer(len(lines), len(lines[0]))
-    win_ptr = renderer.m.mlx_new_window(renderer.ptr, renderer.win_width, renderer.win_height, "A-maze-ing!")
-    renderer.m.mlx_clear_window(renderer.ptr, win_ptr)
-    renderer.m.mlx_string_put(renderer.ptr, win_ptr, 20, 20, 255, lines[0])  # pour les commandes
+    renderer = MazeRenderer(len(lines[0]), len(lines), lines)
+
+    renderer.m.mlx_clear_window(renderer.ptr, renderer.win_ptr)
+    renderer.create_image(lines)
+    # renderer.m.mlx_string_put(renderer.ptr, renderer.win_ptr,
+    # 20, 20, 255, lines[0])  # pour les commandes
     (ret, w, h) = renderer.m.mlx_get_screen_size(renderer.ptr)
     print(f"Got screen size: {w} x {h} .")
 
     stuff = [1, 2]
-    renderer.m.mlx_mouse_hook(win_ptr, renderer.mymouse, None)
-    renderer.m.mlx_key_hook(win_ptr, renderer.mykey, stuff)
-    renderer.m.mlx_hook(win_ptr, 33, 0, renderer.gere_close, None)
+    renderer.m.mlx_mouse_hook(renderer.win_ptr, renderer.mymouse, None)
+    renderer.m.mlx_key_hook(renderer.win_ptr, renderer.mykey, stuff)
+    renderer.m.mlx_hook(renderer.win_ptr, 33, 0, renderer.gere_close, None)
 
     renderer.m.mlx_loop(renderer.ptr)
 

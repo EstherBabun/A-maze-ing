@@ -77,3 +77,78 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+    def my_mlx_pixel_put(self, data, x, y, color, line_length, bpp):
+        """Fast pixel writing to image buffer."""
+        if x >= 0 and y >= 0:  # Basic bounds checking
+            offset = y * line_length + x * (bpp // 8)
+            # Write color in BGR format
+            data[offset] = color & 0xFF                 # Blue
+            data[offset + 1] = (color >> 8) & 0xFF      # Green
+            data[offset + 2] = (color >> 16) & 0xFF     # Red
+            data[offset + 3] = 255                      # Alpha
+
+    def create_image(self, lines):
+        data, bpp, size_line, endian = self.m.mlx_get_data_addr(self.img_ptr)
+
+        # Draw pixels
+        for y in range(self.img_height):
+            for x in range(self.img_width):
+                color = 0x99FF00
+                self.my_mlx_pixel_put(data, x, y, color, size_line, bpp)
+
+        # Display the image
+        self.m.mlx_put_image_to_window(self.ptr, self.win_ptr, self.img_ptr, 0, 0)
+        
+MAZE print
+
+def print_maze_visual(self) -> None:
+        """Print a visual ASCII representation of the maze."""
+        # Top border
+        print("┌" + "─" * (self.cols * 2 - 1) + "┐")
+
+        for y in range(self.rows):
+            # Print vertical walls
+            row = "│"
+            for x in range(self.cols):
+                cell = self.grid[y][x]
+
+                # Cell marker (entry/exit)
+                if cell == self.entry_cell:
+                    row += "S"
+                elif cell == self.exit_cell:
+                    row += "E"
+                elif cell._is_42:
+                    row += "■"
+                else:
+                    row += " "
+
+                # East wall
+                if cell.walls['E']:
+                    row += "│"
+                else:
+                    row += " "
+            print(row)
+
+            # Print horizontal walls (except after last row)
+            if y < self.rows - 1:
+                row = "├"
+                for x in range(self.cols):
+                    cell = self.grid[y][x]
+
+                    # South wall
+                    if cell.walls['S']:
+                        row += "─"
+                    else:
+                        row += " "
+
+                    # Corner
+                    if x < self.cols - 1:
+                        row += "┼"
+                    else:
+                        row += "┤"
+                print(row)
+
+        # Bottom border
+        print("└" + "─" * (self.cols * 2 - 1) + "┘")
