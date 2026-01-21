@@ -12,14 +12,14 @@ import random
 from cell import Cell
 
 
-class Maze:
+class MazeGenerator:
     """A class for the maze attributes and methods.
 
     Attributes:
     - Attributes define by the loaded config:
         cols (int): define the width of the maze
         rows (int): define the height of the maze
-        seed (bool ?): ?
+        seed (int | None): the seed passed to random
         perfect (bool): True if there is juste one path between exit and start
         algorithm (str) : define which algorithm to use to generate the maze
     - Attributes created:

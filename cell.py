@@ -10,7 +10,7 @@ from typing import Dict
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from maze import Maze
+    from a_maze_ing import MazeGenerator
 
 
 class Cell(object):
@@ -31,7 +31,7 @@ class Cell(object):
             "W": (-1, 0)
             }
 
-    def __init__(self, x: int, y: int, maze: Maze) -> None:
+    def __init__(self, x: int, y: int, maze: MazeGenerator) -> None:
         """Initialise the attributes of a cell."""
         self.maze = maze
         self.coord: tuple = (x, y)

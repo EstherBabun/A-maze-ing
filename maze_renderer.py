@@ -7,7 +7,7 @@
 
 # from mlx import Mlx
 from enum import Enum
-from maze import Maze
+from a_maze_ing import MazeGenerator
 
 TILE_SIZE = 30
 COLOR_WALL = 0xFFFFFF
@@ -18,11 +18,11 @@ class Key(Enum):
     ESCAPE = 0xff1b
 
 
-class MazeGenerator:
+class MazeRenderer:
     """Create a window with a maze"""
 
     def __init__(self, config):
-        self.maze = Maze(config)
+        self.maze = MazeGenerator(config)
         self.maze.generate_maze()
         self.filename = config["OUTPUT_FILE"]
         self.file = self.export_to_txt(config["OUTPUT_FILE"])

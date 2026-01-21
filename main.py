@@ -9,7 +9,7 @@
 
 import sys
 from typing import Dict, Any
-from maze_generator import MazeGenerator
+from a_maze_ing import MazeGenerator
 
 
 def load_config(file: str) -> Dict[str, Any]:
