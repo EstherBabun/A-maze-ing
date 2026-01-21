@@ -5,10 +5,9 @@
 # Created: 2026/01/20 18:33:22
 # Updated: 2026/01/20 18:02:15
 
-import math
 from typing import Dict, List, Any, Optional
+from collections import deque
 import random
-
 from cell import Cell
 
 
@@ -46,7 +45,7 @@ class MazeGenerator:
         self.entry: tuple = (0, 0)
         self.exit: tuple = (19, 9)
         self.output_file = "maze.txt"
-        self.algorithm: str = "DFS"
+        self.algorithm: str = "WILSON"
 
         # Track which settings came from config file
         custom: List[str] = []
@@ -90,8 +89,8 @@ class MazeGenerator:
             "EXIT": self.exit,
             "SEED": self.seed,
             "PERFECT": self.perfect,
-            "OUTPUT_FILE": self.output_file,
-            "ALGORITHM": self.algorithm
+            "ALGORITHM": self.algorithm,
+            "OUTPUT_FILE": self.output_file
         }
 
         for k, v in config_items.items():
@@ -313,26 +312,12 @@ class MazeGenerator:
         """Return all allowed neighbored cells without the 42 block cells"""
         neighbors: List[Cell] = []
         x, y = cell.coord
-
-        if x > 0 and not self.grid[y][x - 1]._is_42:
-            neighbors.append(self.grid[y][x - 1])
-        if x < self.cols - 1 and not self.grid[y][x + 1]._is_42:
-            neighbors.append(self.grid[y][x + 1])
-        if y > 0 and not self.grid[y - 1][x]._is_42:
-            neighbors.append(self.grid[y - 1][x])
-        if y < self.rows - 1 and not self.grid[y + 1][x]._is_42:
-            neighbors.append(self.grid[y + 1][x])
+        for direction, (ox, oy) in cell.OFFSET.items():
+            neighbor: Cell = self.get_cell(x + ox, y + oy)
+            if neighbor:
+                if not neighbor._is_42:
+                    neighbors.append(neighbor)
         return neighbors
-
-    def get_walled_neighbors(self, cell: Cell) -> List[tuple]:
-        """Get all the neighbors that still have a wall."""
-        neighbors: List[Cell] = self.get_neighbors_cells(cell)
-        walled: List[tuple] = []
-        for neighbor in neighbors:
-            direction = cell.get_direction(neighbor)
-            if cell.walls[direction] == 1:
-                walled.append((direction, neighbor))
-        return walled
 
     def wilson(self) -> None:
         """Generate an uniform random maze using Wilson algorithm"""
@@ -402,6 +387,15 @@ class MazeGenerator:
                     break
 
     
+    def get_walled_neighbors(self, cell: Cell) -> List[tuple]:
+        """Get all the neighbors that still have a wall."""
+        neighbors: List[Cell] = self.get_neighbors_cells(cell)
+        walled: List[tuple] = []
+        for neighbor in neighbors:
+            direction = cell.get_direction(neighbor)
+            if cell.walls[direction] == 1:
+                walled.append((direction, neighbor))
+        return walled
 
     def make_imperfect(self) -> None:
         """Remove additional walls to make the maze imperfect."""
@@ -414,18 +408,20 @@ class MazeGenerator:
                                 for cell in row 
                                 if not cell._is_42]
         random.shuffle(all_cells)
-        walls_removed = 0
+        removed: int = 0
 
         for cell in all_cells:
-            if walls_removed >= max_removable:
+            if removed >= max_removable:
                 break
-
             walled_neighbors = self.get_walled_neighbors(cell) 
             if walled_neighbors:
                 # Randomly pick a wall to remove
                 direction, neighbor = random.choice(walled_neighbors)
                 cell.set_walls(direction)
-                walls_removed += 1
+                removed += 1
+        print(f"Target walls to remove: {max_removable}")
+        print(f"Actually removed: {removed}")
+
 
     def generate_maze(self) -> None:
         """Generate maze with the choosen algo."""
