@@ -10,7 +10,7 @@ from typing import Dict
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from a_maze_ing import MazeGenerator
+    from maze_generator import MazeGenerator
 
 
 class Cell(object):

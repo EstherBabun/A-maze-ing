@@ -48,8 +48,10 @@ class MazeRenderer:
         # Initialize MLX
         self.m = Mlx()
         self.ptr = self.m.mlx_init()
-        self.win_ptr = self.m.mlx_new_window(self.ptr, self.width, self.height, "=== A-maze-ing ===!")
-        self.img_ptr = self.m.mlx_new_image(self.ptr, self.img_width, self.img_height)
+        self.win_ptr = self.m.mlx_new_window(
+            self.ptr, self.width, self.height, "=== A-maze-ing ===")
+        self.img_ptr = self.m.mlx_new_image(
+            self.ptr, self.img_width, self.img_height)
 
         # Colors
         self.COLOR_BLACK = 0x000000
@@ -94,38 +96,32 @@ class MazeRenderer:
     def draw_north_wall(self, data, size_line, bpp, i, j):
         start_y = i * self.CELL_SIZE
         start_x = j * self.CELL_SIZE
-        # end_y = start_y + self.CELL_SIZE
         end_x = start_x + self.CELL_SIZE
         wall = self.COLOR_WALL
-        t = self.WALL_THICKNESS  # largeur du mur
+        t = self.WALL_THICKNESS
 
-        # Haut
         for y in range(start_y, start_y + t):
             for x in range(start_x, end_x):
                 self.my_mlx_pixel_put(data, x, y, wall, size_line, bpp)
 
     def draw_south_wall(self, data, size_line, bpp, i, j):
-        start_y = i * self.CELL_SIZE
         start_x = j * self.CELL_SIZE
-        end_y = start_y + self.CELL_SIZE
+        end_y = i * self.CELL_SIZE + self.CELL_SIZE
         end_x = start_x + self.CELL_SIZE
         wall = self.COLOR_WALL
-        t = self.WALL_THICKNESS  # largeur du mur
+        t = self.WALL_THICKNESS
 
-        # Bas
         for y in range(end_y - t, end_y):
             for x in range(start_x, end_x):
                 self.my_mlx_pixel_put(data, x, y, wall, size_line, bpp)
 
     def draw_east_wall(self, data, size_line, bpp, i, j):
-        start_y = i * self.CELL_SIZE
-        start_x = j * self.CELL_SIZE
+        start_y = i * self.CELL_SIZE 
         end_y = start_y + self.CELL_SIZE
-        end_x = start_x + self.CELL_SIZE
+        end_x = j * self.CELL_SIZE + self.CELL_SIZE
         wall = self.COLOR_WALL
-        t = self.WALL_THICKNESS  # largeur du mur
+        t = self.WALL_THICKNESS
 
-        # Droite
         for x in range(end_x - t, end_x):
             for y in range(start_y, end_y):
                 self.my_mlx_pixel_put(data, x, y, wall, size_line, bpp)
@@ -134,11 +130,9 @@ class MazeRenderer:
         start_y = i * self.CELL_SIZE
         start_x = j * self.CELL_SIZE
         end_y = start_y + self.CELL_SIZE
-        # end_x = start_x + self.CELL_SIZE
         wall = self.COLOR_WALL
-        t = self.WALL_THICKNESS  # largeur du mur
+        t = self.WALL_THICKNESS
 
-        # Gauche
         for x in range(start_x, start_x + t):
             for y in range(start_y, end_y):
                 self.my_mlx_pixel_put(data, x, y, wall, size_line, bpp)
@@ -164,37 +158,14 @@ class MazeRenderer:
                     self.draw_west_wall(data, size_line, bpp, i, j)
 
         # Display the image
-        self.m.mlx_put_image_to_window(self.ptr, self.win_ptr, self.img_ptr, 0, 0)
+        self.m.mlx_put_image_to_window(
+            self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
-
-def open_file(filename):
-    try:
-        with open(filename, "r") as f:
-            lines = [line.rstrip("\n") for line in f.readlines()]
-    except FileNotFoundError:
-        print(f"Erreur: le fichier {filename} est introuvable")
-        return
-    return lines
-
-
-def main() -> None:
-    lines = open_file("maze.txt")
-    renderer = MazeRenderer(len(lines[0]), len(lines), lines)
-
-    renderer.m.mlx_clear_window(renderer.ptr, renderer.win_ptr)
-    renderer.create_image(lines)
-    # renderer.m.mlx_string_put(renderer.ptr, renderer.win_ptr,
-    # 20, 20, 255, lines[0])  # pour les commandes
-    (ret, w, h) = renderer.m.mlx_get_screen_size(renderer.ptr)
-    print(f"Got screen size: {w} x {h} .")
-
-    stuff = [1, 2]
-    renderer.m.mlx_mouse_hook(renderer.win_ptr, renderer.mymouse, None)
-    renderer.m.mlx_key_hook(renderer.win_ptr, renderer.mykey, stuff)
-    renderer.m.mlx_hook(renderer.win_ptr, 33, 0, renderer.gere_close, None)
-
-    renderer.m.mlx_loop(renderer.ptr)
-
-
-if __name__ == "__main__":
-    main()
+    def open_file(filename):
+        try:
+            with open(filename, "r") as f:
+                lines = [line.rstrip("\n") for line in f.readlines()]
+        except FileNotFoundError:
+            print(f"Erreur: le fichier {filename} est introuvable")
+            return
+        return lines
