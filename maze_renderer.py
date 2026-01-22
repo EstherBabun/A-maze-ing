@@ -65,7 +65,7 @@ class MazeRenderer:
     def mymouse(self, button, x, y, mystuff):
         print(f"Got mouse event! button {button} at {x},{y}.")
 
-    def mykey(self, keynum, mystuff, win_ptr):
+    def mykey(self, keynum, mystuff):
         print(f"Got key {keynum}, and got my stuff back:")
         print(mystuff)
         if keynum == 32:
@@ -161,11 +161,11 @@ class MazeRenderer:
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
-    def open_file(filename):
+    def open_file(filename) -> List[str]:
         try:
             with open(filename, "r") as f:
                 lines = [line.rstrip("\n") for line in f.readlines()]
-        except FileNotFoundError:
-            print(f"Erreur: le fichier {filename} est introuvable")
-            return
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            return []
         return lines

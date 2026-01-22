@@ -9,7 +9,7 @@
 
 import sys
 from maze_generator import MazeGenerator
-from maze_renderer import MazeRenderer
+from my_renderer import MazeRenderer
 
 
 def main() -> None:
@@ -31,15 +31,12 @@ def main() -> None:
     my_maze.generate_maze()
 
     # Affichage avec MiniLibX
-    lines = MazeRenderer.open_file("maze.txt")
-    renderer = MazeRenderer(len(lines[0]), len(lines), lines)
+    renderer = MazeRenderer(my_maze.output_file)
 
     renderer.m.mlx_clear_window(renderer.ptr, renderer.win_ptr)
-    renderer.create_image(lines)
+    renderer.create_image()
     # renderer.m.mlx_string_put(renderer.ptr, renderer.win_ptr,
     # 20, 20, 255, lines[0])  # pour les commandes
-    (ret, w, h) = renderer.m.mlx_get_screen_size(renderer.ptr)
-    print(f"Got screen size: {w} x {h} .")
 
     stuff = [1, 2]
     renderer.m.mlx_mouse_hook(renderer.win_ptr, renderer.mymouse, None)
