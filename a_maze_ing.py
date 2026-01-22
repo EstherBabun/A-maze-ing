@@ -9,7 +9,7 @@
 
 import sys
 from maze_generator import MazeGenerator
-from my_renderer import MazeRenderer
+from maze_renderer import MazeRenderer
 
 
 def main() -> None:
