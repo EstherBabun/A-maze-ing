@@ -7,6 +7,7 @@
 
 from typing import Dict, List, Optional
 import random
+from collections import deque
 from cell import Cell
 
 
@@ -433,6 +434,36 @@ class MazeGenerator:
                 cell.set_walls(direction)
                 removed += 1
 
+    def bfs(self):
+        queue = deque([self.entry_cell])  # contient cells à explorer
+        visited = set([self.entry_cell])  # marque les cells déjà visités et empeche de revenir en arrière ou de boucler
+        parent = {self.entry_cell: None}  # mémorise d'où on vient. pour arriver à key je viens de value
+
+        while queue:
+            current = queue.popleft()
+            if current == self.exit_cell:
+                return parent
+            for direction, binary in current.walls.items():
+                if binary == 0:
+                    neighbor_cell = current.get_neighbor(direction)
+                    if neighbor_cell not in visited:
+                        visited.add(neighbor_cell)
+                        queue.append(neighbor_cell)
+                        parent[neighbor_cell] = current
+
+    def shortest_path(self, parent):
+        path = ""
+        current = self.exit_cell
+
+        while current is not None:
+            next = parent[current]
+            if not next:
+                break
+            path += next.get_direction(current)
+            current = next
+
+        self.path = path[::-1]
+
     def generate_maze(self) -> None:
         """Generate maze with the choosen algo."""
         # set seed: custom if configured else None
@@ -447,6 +478,9 @@ class MazeGenerator:
         # create an imperfect maze if configurate
         if not self.perfect:
             self.make_imperfect()
+
+        # Search solution path
+        self.shortest_path(self.bfs())
 
         # export hex representation of the maze
         self.export_to_txt()
@@ -466,9 +500,60 @@ class MazeGenerator:
         try:
             with open(self.output_file, "w") as f:
                 f.write(self.hex_repr + "\n")
-                # x, y = self.entry
-                # f.write(f'{x},{y}\n')
-                # x, y = self.exit
-                # f.write(f'{x},{y}\n')
+                x, y = self.entry
+                f.write(f'{x},{y}\n')
+                x, y = self.exit
+                f.write(f'{x},{y}\n')
+                f.write(self.path)
         except Exception as e:
             print(f"Erreur lors de l'écriture du fichier: {e}")
+
+    def print_maze_visual(self) -> None:
+        """Print a visual ASCII representation of the maze."""
+        # Top border
+        print("┌" + "─" * (self.cols * 2 - 1) + "┐")
+
+        for y in range(self.rows):
+            # Print vertical walls
+            row = "│"
+            for x in range(self.cols):
+                cell = self.grid[y][x]
+
+                # Cell marker (entry/exit)
+                if cell == self.entry_cell:
+                    row += "S"
+                elif cell == self.exit_cell:
+                    row += "E"
+                elif cell._is_42:
+                    row += "■"
+                else:
+                    row += " "
+
+                # East wall
+                if cell.walls['E']:
+                    row += "│"
+                else:
+                    row += " "
+            print(row)
+
+            # Print horizontal walls (except after last row)
+            if y < self.rows - 1:
+                row = "├"
+                for x in range(self.cols):
+                    cell = self.grid[y][x]
+
+                    # South wall
+                    if cell.walls['S']:
+                        row += "─"
+                    else:
+                        row += " "
+
+                    # Corner
+                    if x < self.cols - 1:
+                        row += "┼"
+                    else:
+                        row += "┤"
+                print(row)
+
+        # Bottom border
+        print("└" + "─" * (self.cols * 2 - 1) + "┘")

@@ -9,7 +9,7 @@ PYTHON := python3
 VENV := venv
 PYTHON_VENV := $(VENV)/bin/python
 
-SRC := main.py
+SRC := a_maze_ing.py
 CONFIG := config.txt
 AFFICHAGE := maze_renderer.py
 
