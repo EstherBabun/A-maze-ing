@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# File: test_mlx.py
+# File: maze_renderer.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/20 16:09:10
@@ -24,7 +24,7 @@ class MazeRenderer:
         Args:
             width: Maze width in cells
             height: Maze height in cells
-        Attributs:
+        Attributes:
             width, height : size of the window
             img_width, img_height : size of the maze
             wall_thickness: width of walls
