@@ -480,7 +480,11 @@ class MazeGenerator:
         """Generate a file with the maze in hexadecimal."""
         try:
             with open(self.output_file, "w") as f:
-                f.write(self.hex_repr)
+                f.write(self.hex_repr + "\n")
+                # x, y = self.entry
+                # f.write(f'{x},{y}\n')
+                # x, y = self.exit
+                # f.write(f'{x},{y}\n')
         except Exception as e:
             print(f"Error writing file: {e}")
 
