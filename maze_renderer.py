@@ -13,7 +13,6 @@ class MazeRenderer:
     COLOR_WALL = 0x00CC00
     COLOR_BG = 0x1A1A1A 
     COLOR_42 = 0x00CC00
-    WALL_THICKNESS = 1
 
     def __init__(self, output_file: str) -> None:
         """
@@ -23,10 +22,11 @@ class MazeRenderer:
             output_file: Path to the maze file from MazeGenerator
             
         Attributes:
-            cell_size: size of a cell in pixels
+            content: parsed content of maze output file
             width, height: size of the window
-            img_width, img_height: size of the maze
-            content: maze data
+            img_width, img_height: size of the maze img
+            cell_size: size of a cell in pixels
+            wall_thickness: thickness of the walls in pixels
             ptr: MLX instance
             win_ptr: Window identifier
             img_ptr: Image identifier
@@ -40,9 +40,8 @@ class MazeRenderer:
         content, maze_w, maze_h = info
         self.content = content
 
-        # Get screen dimensions
+        # Get screen dimensions or switch to default on failure
         ret, screen_width, screen_height = self.m.mlx_get_screen_size(self.ptr)
-        print(f"Screen size = {screen_width} x {screen_height}")
         if ret != 0:
             screen_width, screen_height = 1920, 1080
             print("Warning: Using default screen size")
@@ -52,19 +51,19 @@ class MazeRenderer:
         self.cell_size = 30
 
         # Calculate usable screen space (90% of total scren size)
-        usable_width = int(screen_width * 0.90)
-        usable_height = int(screen_height * 0.90)
+        usable_width: int = int(screen_width * 0.90)
+        usable_height: int = int(screen_height * 0.90)
 
         # Determine which dimension gets the extra space
-        # The extra space is 300 pixels wide
-        # Remove 300 pixels from the available space for the maze image
+        # The extra space is 300(width) or 200(height) pixels wide
+        # Remove those pixels from the available space for the maze image
         if maze_h > maze_w:
-            # Tall maze: extra space goes vertically
+            # Tall maze: extra space goes to the right
             # Available space for maze image = usable_width - 300 pixels
             available_width = usable_width - 300
             available_height = usable_height
         else:
-            # Wide maze: extra space goes horizontaly
+            # Wide maze: extra space goes to the bottom
             available_width = usable_width
             available_height = usable_height - 200
 
@@ -81,6 +80,12 @@ class MazeRenderer:
             print("Consider generating a smaller maze for better visibility")
             print("Recommended maze size: 120x60")
             self.cell_size = 12
+
+        # adapt wall thickness to cell size
+        self.wall_thickness = self.cell_size // 10
+        # debug
+        print(f"Cell size: {self.cell_size}")
+        print(f"Wall thickness: {self.wall_thickness}")
 
         # Calculate maze image size
         self.img_width = maze_w * self.cell_size
@@ -150,7 +155,7 @@ class MazeRenderer:
         start_x = j * self.cell_size
         end_x = start_x + self.cell_size
         wall = self.COLOR_WALL
-        t = self.WALL_THICKNESS
+        t = self.wall_thickness
 
         for y in range(start_y, start_y + t):
             for x in range(start_x, end_x):
@@ -161,7 +166,7 @@ class MazeRenderer:
         end_y = i * self.cell_size + self.cell_size
         end_x = start_x + self.cell_size
         wall = self.COLOR_WALL
-        t = self.WALL_THICKNESS
+        t = self.wall_thickness
 
         for y in range(end_y - t, end_y):
             for x in range(start_x, end_x):
@@ -172,7 +177,7 @@ class MazeRenderer:
         end_y = start_y + self.cell_size
         end_x = j * self.cell_size + self.cell_size
         wall = self.COLOR_WALL
-        t = self.WALL_THICKNESS
+        t = self.wall_thickness
 
         for x in range(end_x - t, end_x):
             for y in range(start_y, end_y):
@@ -183,7 +188,7 @@ class MazeRenderer:
         start_x = j * self.cell_size
         end_y = start_y + self.cell_size
         wall = self.COLOR_WALL
-        t = self.WALL_THICKNESS
+        t = self.wall_thickness
 
         for x in range(start_x, start_x + t):
             for y in range(start_y, end_y):

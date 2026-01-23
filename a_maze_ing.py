@@ -44,6 +44,7 @@ def main() -> None:
     renderer.m.mlx_hook(renderer.win_ptr, 33, 0, renderer.gere_close, None)
 
     renderer.m.mlx_loop(renderer.ptr)
+    #my_maze.print_maze_visual()
 
 
 if __name__ == "__main__":

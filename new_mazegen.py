@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-# File: maze_generator.py
+# File: new_mazegen.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/20 18:33:22
-# Updated: 2026/01/20 18:02:15
-
-"""Docstring to write."""
+# Updated: 2026/01/21 22:16:15
 
 from typing import Dict, List, Optional
 import random
@@ -45,7 +43,7 @@ class MazeGenerator:
         self.seed: int | None = None
         self.perfect: bool = True
         self.entry: tuple = (0, 0)
-        self.exit: tuple = (19, 9)
+        self.exit: tuple = (self.cols - 1, self.rows - 1)
         self.output_file = "maze.txt"
         self.algorithm: str = "WILSON"
 
@@ -63,21 +61,21 @@ class MazeGenerator:
         self.tot_size: int = self.cols * self.rows
         self.path: str = ""
 
-        # create utils lists
+        # Create the grid
         self.grid: List[List[Cell]] = [
-                [Cell(x, y, self) for x in range(self.cols)]
-                for y in range(self.rows)
-                ]
+            [Cell(x, y, self) for x in range(self.cols)]
+            for y in range(self.rows)
+            ]
         self.block_42_walls()
 
+        # Create lists tools
         self.unvisited: List[Cell] = [
             cell for row in self.grid
             for cell in row if not cell._is_42
             ]
-        # save to total amout of valid cells
         self.valid_cells: int = len(self.unvisited)
 
-        # store entry and exit cell objects
+        # Define important cells
         self.entry_cell: Cell = self.get_cell(*self.entry)
         self.exit_cell: Cell = self.get_cell(*self.exit)
 
@@ -102,7 +100,7 @@ class MazeGenerator:
                 print(f"  {k}: {v} (default)")
 
     def _read_config_file(self, file: str) -> Dict[str, str] | None:
-        """Read config file and return raw dict or None on error."""
+        """Read config file and return raw key-value pairs or None on error."""
         try:
             with open(file, "r") as f:
                 content: str = f.read()
@@ -121,10 +119,8 @@ class MazeGenerator:
                             key = key.strip().upper()
                             raw_config[key] = value.strip()
                     except ValueError:
-                        print(
-                                f'Error in line {line} - '
-                                f'Expected syntax: "KEY=value"'
-                                )
+                        print(f'Error in line {line} -'
+                              f' Expected syntax: "KEY=value"')
                         continue
             if not len(raw_config.keys()):
                 raise ValueError(f"No valid settings in {file}")
@@ -138,11 +134,8 @@ class MazeGenerator:
             return None
 
     def _parse_config_values(self, raw_config: Dict[str, str]) -> List[str]:
-        """
-        Parse and validate each config value.
-
-        Return: list of successfully parsed keys.
-        """
+        """Parse and validate each config value.
+        Returns list of successfully parsed keys."""
         custom: List[str] = []
 
         for k, v in raw_config.items():
@@ -174,9 +167,8 @@ class MazeGenerator:
                     custom.append(k)
                 elif k == "ALGORITHM":
                     if v.upper() not in ["DFS", "WILSON"]:
-                        raise ValueError(
-                                "Invalid algorithm: pick DFS or WILSON"
-                                )
+                        raise ValueError("Invalid algorithm: "
+                                         "pick DFS or WILSON")
                     self.algorithm = v.upper()
                     custom.append(k)
                 else:
@@ -190,7 +182,7 @@ class MazeGenerator:
 
         return custom
 
-    def _parse_coordinate(self, value: str, key: str) -> tuple:
+    def _parse_coordinate(self, value: str, key: str) -> tuple:  # key non utilisé ?
         """Parse a coordinate string 'x,y' into a tuple."""
         coord_tuple = tuple(int(i.strip()) for i in value.split(','))
         if len(coord_tuple) != 2:
@@ -221,7 +213,8 @@ class MazeGenerator:
             custom.remove(point_type)
 
     def _validate_entry_exit(self, custom: List[str]) -> None:
-        """Validate entry/exit by checking maze bounds and 42 cells."""
+        """Validate and adjust entry/exit points based
+        on maze dimensions and 42 cells."""
         # Adjust exit defaults if WIDTH/HEIGHT changed
         if "EXIT" not in custom and ("WIDTH" in custom or "HEIGHT" in custom):
             self.exit = (self.cols - 1, self.rows - 1)
@@ -244,22 +237,19 @@ class MazeGenerator:
         ft_walls: List[tuple] = self.get_42_cells(self.cols, self.rows)
         if self.entry in ft_walls:
             print(
-                    "Error: Entry point is stuck in the 42 pattern\n"
+                    "Error: Entry point is stuck in the 42 cells\n"
                     "Switching to default entry"
                     )
             self.reset_default_extry("ENTRY", custom)
         if self.exit in ft_walls:
             print(
-                    "Error: Exit point is stuck in the 42 pattern\n"
+                    "Error: Exit point is stuck in the 42 cells\n"
                     "Switching to default exit"
                     )
             self.reset_default_extry("EXIT", custom)
 
         if self.entry == self.exit:
-            print(
-                    "Error: Entry and exit cannot have "
-                    "the same coordinates"
-                    )
+            print("Error: Entry and exit cannot have the same coordinates")
             if self.entry != (0, 0):
                 self.reset_default_extry("ENTRY", custom)
                 print("Switching to default entry")
@@ -268,11 +258,8 @@ class MazeGenerator:
                 print("Switching to default exit")
 
     def load_config(self, file: str) -> List[str]:
-        """
-        Parse the config file and update maze attributes.
-
-        Return: list of custom keys.
-        """
+        """Parse the config file and update maze attributes.
+        Returns list of custom keys."""
         custom: List[str] = []
         raw_config: Dict[str, str] = {}
 
@@ -290,8 +277,8 @@ class MazeGenerator:
         self._validate_entry_exit(custom)
 
         # Error message for "42" pattern if maze too small
-        if self.cols < 11 or self.rows < 9:
-            print("Warning: Maze too small for “42” pattern")
+        if self.cols < 9 or self.rows < 7:
+            print("Error: Maze too small for “42” pattern")
 
         self.print_config(custom)
         return custom
@@ -304,23 +291,20 @@ class MazeGenerator:
 
     def get_42_cells(self, w: int, h: int) -> List[tuple]:
         """Calculate the coordinates of the 42 cells."""
-        if w < 11 or h < 9:
+        if w < 9 or h < 7:
             return []  # No 42_walls, maze too small
         cx: int = (w - 1) // 2 if w % 2 == 0 else w // 2
         cy: int = (h - 1) // 2 if h % 2 == 0 else h // 2
 
-        four_walls: List[tuple] = [
-                (cx - 1, cy), (cx - 2, cy), (cx - 3, cy),
-                (cx - 1, cy + 1), (cx - 1, cy + 2),
-                (cx - 3, cy - 1), (cx - 3, cy - 2)
-                ]
-        two_walls: List[tuple] = [
-                (cx + 1, cy), (cx + 2, cy), (cx + 3, cy),
-                (cx + 1, cy + 1), (cx + 1, cy + 2),
-                (cx + 3, cy - 1), (cx + 3, cy - 2),
-                (cx + 1, cy - 2), (cx + 2, cy - 2), (cx + 3, cy - 2),
-                (cx + 2, cy + 2), (cx + 3, cy + 2)
-                ]
+        four_walls: List[tuple] = [(cx - 1, cy), (cx - 2, cy), (cx - 3, cy),
+                                   (cx - 1, cy + 1), (cx - 1, cy + 2),
+                                   (cx - 3, cy - 1), (cx - 3, cy - 2)]
+        two_walls: List[tuple] = [(cx + 1, cy), (cx + 2, cy), (cx + 3, cy),
+                                  (cx + 1, cy + 1), (cx + 1, cy + 2),
+                                  (cx + 3, cy - 1), (cx + 3, cy - 2),
+                                  (cx + 1, cy - 2), (cx + 2, cy - 2),
+                                  (cx + 3, cy - 2), (cx + 2, cy + 2),
+                                  (cx + 3, cy + 2)]
 
         ft_walls = four_walls + two_walls
         return ft_walls
@@ -331,17 +315,18 @@ class MazeGenerator:
             self.grid[y][x]._is_42 = True
 
     def get_neighbors_cells(self, cell: Cell) -> List[Cell]:
-        """Return all allowed neighbored cells without the 42 block cells."""
+        """Return all allowed neighbored cells without the 42 block cells"""
         neighbors: List[Cell] = []
         x, y = cell.coord
         for direction, (ox, oy) in cell.OFFSET.items():
             neighbor: Cell = self.get_cell(x + ox, y + oy)
-            if neighbor and not neighbor._is_42:
-                neighbors.append(neighbor)
+            if neighbor:  # on peut ajouter juste and ?
+                if not neighbor._is_42:
+                    neighbors.append(neighbor)
         return neighbors
 
     def wilson(self) -> None:
-        """Generate an uniform random maze using Wilson's algorithm."""
+        """Generate an uniform random maze using Wilson algorithm"""
         # Premier îlot du labyrinthe
         self.entry_cell.set_visited()
 
@@ -353,7 +338,7 @@ class MazeGenerator:
                 cell.set_walls(dir)
 
     def walk(self, start_cell: Cell) -> List[tuple[Cell, str]]:
-        """Walk until finding a path of unvisited cell without looping."""
+        """walk on until founding a path of unvisited cell without looping"""
         cell_visited = {}
         draft_path = []
         walking = True
@@ -422,8 +407,8 @@ class MazeGenerator:
         dead_ends: List[Cell] = []
         for row in self.grid:
             for cell in row:
-                x, y = cell.coord
-                if cell._is_42 :
+                # cette partie là est inutile puisque cell.is_42 == 4
+                if cell._is_42:
                     continue
                 wall_count = sum(cell.walls.values())
                 if wall_count == 3:
@@ -432,7 +417,7 @@ class MazeGenerator:
 
     def make_imperfect(self) -> None:
         """Remove walls from dead-end cells to make the maze imperfect."""
-        percentage: float = 0.08
+        percentage: float = 0.2
         dead_ends: List[Cell] = self.get_dead_ends()
         max_removable: int = int(len(dead_ends) * percentage)
 
@@ -442,39 +427,17 @@ class MazeGenerator:
         for cell in dead_ends:
             if removed >= max_removable:
                 break
-            for direction, binary in cell.walls.items():
-                if binary == 0:
-                    neighbor = cell.get_neighbor(cell.OPPOSITE[direction])
-                    if neighbor and not neighbor._is_42:
-                        cell.set_walls(cell.OPPOSITE[direction])
-                        removed += 1
-                        break
 
-        if removed == 0:
-            for cell in dead_ends:
-                if removed == 1:
-                    break
-                for direction, binary in cell.walls.items():
-                    if binary == 0:
-                        neighbor = cell.get_neighbor(cell.OPPOSITE[direction])
-                        if neighbor and not neighbor._is_42:
-                            cell.set_walls(cell.OPPOSITE[direction])
-                            removed += 1
-                            break
-
-        print(f"Dead-ends found: {len(dead_ends)}")
-        print(f"Target walls to remove: {max_removable}")
-        print(f"Actually removed: {removed}")
-
+            walled_neighbors = self.get_walled_neighbors(cell)
+            if walled_neighbors:
+                direction, neighbor = random.choice(walled_neighbors)
+                cell.set_walls(direction)
+                removed += 1
 
     def bfs(self):
-        # deque containing cells to explore
-        queue = deque([self.entry_cell])
-        # store visited cells to prevent loops or backward
-        visited = set([self.entry_cell])
-        # dict storing parent for each visited cell
-        # To reach key I come from value
-        parent = {self.entry_cell: None}  
+        queue = deque([self.entry_cell])  # contient cells à explorer
+        visited = set([self.entry_cell])  # marque les cells déjà visités et empeche de revenir en arrière ou de boucler
+        parent = {self.entry_cell: None}  # mémorise d'où on vient. pour arriver à key je viens de value
 
         while queue:
             current = queue.popleft()
@@ -482,17 +445,16 @@ class MazeGenerator:
                 return parent
             for direction, binary in current.walls.items():
                 if binary == 0:
-                    neighbor = current.get_neighbor(direction)
-                    if neighbor not in visited:
-                        visited.add(neighbor)
-                        queue.append(neighbor)
-                        parent[neighbor] = current
+                    neighbor_cell = current.get_neighbor(direction)
+                    if neighbor_cell not in visited:
+                        visited.add(neighbor_cell)
+                        queue.append(neighbor_cell)
+                        parent[neighbor_cell] = current
 
     def shortest_path(self, parent):
         path = ""
         current = self.exit_cell
 
-        # store path starting from exit
         while current is not None:
             next = parent[current]
             if not next:
@@ -500,7 +462,6 @@ class MazeGenerator:
             path += next.get_direction(current)
             current = next
 
-        # set path attribute reversing stored path
         self.path = path[::-1]
 
     def generate_maze(self) -> None:
@@ -514,6 +475,7 @@ class MazeGenerator:
         elif self.algorithm == "WILSON":
             self.wilson()
 
+        # create an imperfect maze if configurate
         if not self.perfect:
             self.make_imperfect()
 
@@ -525,25 +487,26 @@ class MazeGenerator:
 
     @property
     def hex_repr(self):
-        """Hex representation of the maze."""
+        """To print in hexa the grid of the maze"""
         maze_hex: str = ""
         for y in range(self.rows):
-            maze_hex += "".join(cell.hex_repr for cell in self.grid[y])
+            maze_hex += "".join(
+                self.grid[y][x].hex_repr for x in range(self.cols))
             maze_hex += "\n"
         return maze_hex
 
     def export_to_txt(self) -> None:
-        """Generate a file with the maze in hexadecimal."""
+        """To generate a file with the maze in hexadecimal"""
         try:
             with open(self.output_file, "w") as f:
                 f.write(self.hex_repr + "\n")
-                #x, y = self.entry
-                #f.write(f'{x},{y}\n')
-                #x, y = self.exit
-                #f.write(f'{x},{y}\n')
-                #f.write(self.path)
+                x, y = self.entry
+                f.write(f'{x},{y}\n')
+                x, y = self.exit
+                f.write(f'{x},{y}\n')
+                f.write(self.path)
         except Exception as e:
-            print(f"Error writing file: {e}")
+            print(f"Erreur lors de l'écriture du fichier: {e}")
 
     def print_maze_visual(self) -> None:
         """Print a visual ASCII representation of the maze."""
