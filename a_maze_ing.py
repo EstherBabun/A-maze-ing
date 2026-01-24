@@ -9,6 +9,7 @@
 
 import sys
 from maze_generator import MazeGenerator
+from parser_maze import MazeParser
 # from maze_renderer import MazeRenderer
 
 
@@ -29,7 +30,9 @@ def main() -> None:
 
     # generate maze passing "DFS" or "Wilson" as argument
     my_maze.generate_maze()
-    my_maze.print_maze_visual()
+
+    parsing = MazeParser(my_maze.output_file, my_maze.rows, config_file)
+    parsing.display_ascii()
 
     # Affichage avec MiniLibX
     """ renderer = MazeRenderer(my_maze.output_file)

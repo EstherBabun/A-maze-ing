@@ -161,11 +161,52 @@ class MazeRenderer:
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
-    def open_file(filename):
-        try:
-            with open(filename, "r") as f:
-                lines = [line.rstrip("\n") for line in f.readlines()]
-        except FileNotFoundError:
-            print(f"Erreur: le fichier {filename} est introuvable")
-            return
-        return lines
+    def print_maze_visual(self) -> None:
+        """Print a visual ASCII representation of the maze."""
+        # Top border
+        print("┌" + "─" * (self.cols * 2 - 1) + "┐")
+
+        for y in range(self.rows):
+            # Print vertical walls
+            row = "│"
+            for x in range(self.cols):
+                cell = self.grid[y][x]
+
+                # Cell marker (entry/exit)
+                if cell == self.entry_cell:
+                    row += "S"
+                elif cell == self.exit_cell:
+                    row += "E"
+                elif cell._is_42:
+                    row += "■"
+                else:
+                    row += " "
+
+                # East wall
+                if cell.walls['E']:
+                    row += "│"
+                else:
+                    row += " "
+            print(row)
+
+            # Print horizontal walls (except after last row)
+            if y < self.rows - 1:
+                row = "├"
+                for x in range(self.cols):
+                    cell = self.grid[y][x]
+
+                    # South wall
+                    if cell.walls['S']:
+                        row += "─"
+                    else:
+                        row += " "
+
+                    # Corner
+                    if x < self.cols - 1:
+                        row += "┼"
+                    else:
+                        row += "┤"
+                print(row)
+
+        # Bottom border
+        print("└" + "─" * (self.cols * 2 - 1) + "┘")

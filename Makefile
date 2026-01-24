@@ -14,7 +14,7 @@ CONFIG := config.txt
 AFFICHAGE := maze_renderer.py
 
 venv:
-	python3 -m venv venv
+	python3.12 -m venv venv
 	$(PYTHON) install -r requirements.txt
 
 run:
