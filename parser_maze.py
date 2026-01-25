@@ -48,7 +48,7 @@ class MazeParser:
         wrong_choice = False
         while True:
             choice = input("Choice? (1-4): ")
-            if choice in "1234":
+            if choice in ("1", "2", "3", "4"):
                 return choice, wrong_choice
             else:
                 wrong_choice = True
