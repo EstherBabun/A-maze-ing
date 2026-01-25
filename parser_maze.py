@@ -6,7 +6,6 @@
 # Updated: 2026/01/24 16:09:10
 
 from maze_generator import MazeGenerator
-from typing import Dict
 
 
 class MazeParser:
@@ -14,7 +13,7 @@ class MazeParser:
     A class to display a maze in terminal ASCII rendering.
     """
 
-    def __init__(self, filename, maze_size, config: Dict[str]):
+    def __init__(self, filename, maze_size, config):
         """
         Attributs:
         - name (str): the name of the file to open
@@ -49,11 +48,11 @@ class MazeParser:
         wrong_choice = False
         while True:
             choice = input("Choice? (1-4): ")
-            if choice in {'1', '2', '3', '4'}:
+            if choice in "1234":
                 return choice, wrong_choice
             else:
-                print("Invalid choice, please enter a number from 1 to 4.")
                 wrong_choice = True
+                return choice, wrong_choice
 
     def open_file(self):
         try:
@@ -67,10 +66,10 @@ class MazeParser:
     def parse_lines(self):
         lines = self.open_file()
         self.maze = lines[:self.maze_size]
-        self.entry = (int(lines[self.maze_size + 1][0]),
-                      int(lines[self.maze_size + 1][2]))
-        self.exit = (int(lines[self.maze_size + 2][0]),
-                     int(lines[self.maze_size + 2][2]))
+        x, y = lines[self.maze_size + 1].split(',')
+        self.entry = (int(x), int(y))
+        x, y = lines[self.maze_size + 2].split(',')
+        self.exit = (int(x), int(y))
         self.path = lines[self.maze_size + 3]
 
     def display_maze(self, display_path, w_color):
@@ -151,6 +150,9 @@ class MazeParser:
             self.show_menu()
             choice, wrong = self.get_choice()
             if wrong:
+                while wrong:
+                    print("Invalid choice, please enter a number from 1 to 4.")
+                    choice, wrong = self.get_choice()
                 print("\033[2J")
 
             # Commandes available
