@@ -37,7 +37,7 @@ class MazeGenerator:
             "W": (-1, 0)
             }
 
-    def __init__(self, config_file: Optional[str] = None) -> None:
+    def __init__(self, config_file: str | None) -> None:
         """Initialise the attributes of the maze with the default config."""
         # Set defaults first
         self.cols: int = 20
@@ -100,6 +100,7 @@ class MazeGenerator:
                 print(f"  {k}: {v}")
             else:
                 print(f"  {k}: {v} (default)")
+        print()
 
     def _read_config_file(self, file: str) -> Dict[str, str] | None:
         """Read config file and return raw dict or None on error."""
@@ -148,13 +149,13 @@ class MazeGenerator:
         for k, v in raw_config.items():
             try:
                 if k == "WIDTH":
-                    if int(v) < 0:
-                        raise ValueError("width cannot be negative")
+                    if int(v) < 0 or int(v) == 1:
+                        raise ValueError("width cannot be one or negative")
                     self.cols = int(v)
                     custom.append(k)
                 elif k == "HEIGHT":
-                    if int(v) < 0:
-                        raise ValueError("height cannot be negative")
+                    if int(v) < 0 or int(v) == 1:
+                        raise ValueError("height cannot be one or negative")
                     self.rows = int(v)
                     custom.append(k)
                 elif k == "ENTRY":
@@ -462,9 +463,10 @@ class MazeGenerator:
                             removed += 1
                             break
 
-        print(f"Dead-ends found: {len(dead_ends)}")
-        print(f"Target walls to remove: {max_removable}")
-        print(f"Actually removed: {removed}")
+        # print(f"Dead-ends found: {len(dead_ends)}")
+        # print(f"Target walls to remove: {max_removable}")
+        # print(f"Actually removed: {removed}")
+        # print()
 
 
     def bfs(self):
@@ -537,11 +539,11 @@ class MazeGenerator:
         try:
             with open(self.output_file, "w") as f:
                 f.write(self.hex_repr + "\n")
-                #x, y = self.entry
-                #f.write(f'{x},{y}\n')
-                #x, y = self.exit
-                #f.write(f'{x},{y}\n')
-                #f.write(self.path)
+                x, y = self.entry
+                f.write(f'{x},{y}\n')
+                x, y = self.exit
+                f.write(f'{x},{y}\n')
+                f.write(self.path + "\n")
         except Exception as e:
             print(f"Error writing file: {e}")
 
