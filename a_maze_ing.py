@@ -8,7 +8,6 @@
 """Docstring to write."""
 
 import sys
-from maze_generator import MazeGenerator
 from maze_renderer import MazeRenderer
 
 

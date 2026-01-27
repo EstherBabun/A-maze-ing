@@ -5,9 +5,12 @@
 # Created: 2026/01/22 12:35:09
 # Updated: 2026/01/22 12:35:09
 
-from mlx import Mlx
-from typing import List, Tuple, Dict, Optional
+from __future__ import annotations
 from maze_generator import MazeGenerator
+from mlx import Mlx
+from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from cell import CELL
 
 class MazeRenderer:
     """A class holding the renderer's specifications."""
@@ -52,6 +55,10 @@ class MazeRenderer:
         self.exit = (0, 0)
         self.coord_path: List[Tuples[int, int]] = []
 
+        # declare current coordinates and path for navigation
+        self.current_cell: Cell = None
+        self.navigation_path: List[Tuple[int, int]] = []
+
         # create a maze
         self.create_maze(config)
 
@@ -95,7 +102,8 @@ class MazeRenderer:
         self.color_wall = green["wall"]
         self.color_bg = 0x1A1A1A
         self.color_path = green["path"]
-        self.color_cursor = 0x1F1F1F
+        self.color_cursor = 0x005080
+
 
         # create configure and launch renderer
         self.config_launch_renderer()
@@ -129,6 +137,8 @@ class MazeRenderer:
         self.exit = maze_gen.exit
         self.convert_path(maze_gen.path)
         self.toggle_path: bool = False
+        self.current_cell = maze_gen.entry_cell
+        self.navigation_path: List[Tuple[int, int]] = [maze_gen.entry]
 
     def set_cell_size_and_wall_thickness(self) -> None:
         """Calculate cell size according to screen and maze size."""
@@ -222,10 +232,11 @@ class MazeRenderer:
     def put_commands(self) -> None:
         self.my_string_put(10, 0xFFFF00, "Start")
         self.my_string_put(30, 0x00FFFF, "Finish")
-        self.my_string_put(50, 0xFFFFFF, "s: toggle solution")
+        self.my_string_put(50, 0xFFFFFF, "Arrow keys: navigate")
         self.my_string_put(70, 0xFFFFFF, "c: toggle colors")
-        self.my_string_put(90, 0xFFFFFF, "r: generate new maze")
-        self.my_string_put(110, 0xFFFFFF, "q: quit")
+        self.my_string_put(90, 0xFFFFFF, "s: toggle solution")
+        self.my_string_put(110, 0xFFFFFF, "r: generate new maze")
+        self.my_string_put(130, 0xFFFFFF, "q: quit")
 
     def my_mlx_pixel_put(self, x, y, color):
         """Fast pixel writing to image buffer."""
@@ -330,6 +341,8 @@ class MazeRenderer:
             for j, cell in enumerate(line):
                 if (j, i) in self.coord_path:
                     self.draw_cell(i, j, color)
+                    if not self.toggle_path and (j, i) in self.navigation_path:
+                        self.draw_cell(i, j, self.color_cursor)
                     if cell in "13579BD":
                         self.draw_north_wall(i, j, self.color_wall)
                     if cell in "4567CDE":
@@ -348,6 +361,8 @@ class MazeRenderer:
             for j, cell in enumerate(line):
                 if (j, i) in self.coord_path and self.toggle_path:
                     self.draw_cell(i, j, self.color_path)
+                if (j, i) in self.navigation_path and (j, i) != self.entry:
+                    self.draw_cell(i, j, self.color_cursor)
                 if cell == 'F':
                     self.draw_cell(i, j, self.color_wall)
                 if cell in "13579BD":
@@ -363,14 +378,56 @@ class MazeRenderer:
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
+    def redraw_walls(self, x: int, y: int) -> None:
+        cell: Cell = self.maze_gen.get_cell(x, y)
+        if cell.walls["W"] == 1:
+            self.draw_west_wall(y, x, self.color_wall)
+        if cell.walls["S"] == 1:
+            self.draw_south_wall(y, x, self.color_wall)
+        if cell.walls["E"] == 1:
+            self.draw_east_wall(y, x, self.color_wall)
+        if cell.walls["N"] == 1:
+            self.draw_north_wall(y, x, self.color_wall)
+
+    def navigate(self, direction) -> None:
+        """Navigate in the maze, coloring cell in given direction."""
+        current = self.current_cell
+        next_cell = current.get_neighbor(direction)
+        cx, cy = current.coord
+        if next_cell is not None and current.walls[direction] == 0:
+            nx, ny = next_cell.coord
+            if next_cell.coord == self.exit:
+                return
+            if next_cell.coord in self.navigation_path:
+                idx = self.navigation_path.index(next_cell.coord)
+                to_delete = self.navigation_path[idx + 1:]
+                self.navigation_path = self.navigation_path[:idx + 1]
+                for (x, y) in to_delete:
+                    self.draw_cell(y, x, self.color_bg)
+                    if (x, y) == self.entry:
+                        self.draw_entry_exit(y, x, self.BLUE)
+                    if (x, y) == self.exit:
+                        self.draw_entry_exit(y, x, self.YELLOW)
+                    self.redraw_walls(x, y)
+            else:
+                self.draw_cell(ny, nx, self.color_cursor)
+                self.redraw_walls(nx, ny)
+                self.navigation_path.append(next_cell.coord)
+            self.current_cell = next_cell
+
+        # Display the image
+        self.m.mlx_put_image_to_window(
+            self.ptr, self.win_ptr, self.img_ptr, 0, 0)
+
     def mykey(self, keynum, param):
-        #navigation: Dict[str, int] = {
-        #        65361: "W",
-        #        65364: "S",
-        #        65363: "E",
-        #        65362: "N"
-        #        }
-        #print(f"Got keynum {keynum}")
+        navigation: Dict[str, int] = {
+                65361: "W",
+                65364: "S",
+                65363: "E",
+                65362: "N"
+                }
+        print(f"Got keynum {keynum}")
+
         # s key
         if keynum == 115:
             self.toggle_path = not self.toggle_path
@@ -380,6 +437,7 @@ class MazeRenderer:
             else:
                 print("Hiding solution")
                 self.toggle_solution(self.color_bg)
+
         # c key
         elif keynum == 99:
             next_idx = (self.color_idx + 1) % len(self.color_palettes)
@@ -389,6 +447,7 @@ class MazeRenderer:
             self.color_path = palette["path"]
             self.toggle_colors()
             print(f"Switched to {self.palette_names[next_idx]} color palette")
+
         # r key
         elif keynum == 114:
             print("Generating new maze...")
@@ -398,10 +457,14 @@ class MazeRenderer:
             self.m.mlx_loop_exit(self.ptr)
             # create new maze
             self.create_maze(self.config_file)
+            self.navigation_path = []
             # create configure and launch renderer
             self.config_launch_renderer()
-        #elif keynum in navigation.keys():
-        #        self.navigate(navigation[keynum])
+
+        # arrow keys
+        elif keynum in navigation.keys():
+                self.navigate(navigation[keynum])
+        # q key
         elif keynum == 113:
             self.gere_close(None)
              
