@@ -8,26 +8,45 @@
 """Docstring to write."""
 
 import sys
-from maze_generator import MazeGenerator
-from maze_renderer import MazeRenderer
+# from maze_generator import MazeGenerator
+# from maze_renderer import MazeRenderer
+from ascii_renderer import AsciiRenderer
+
+
+def check_display(config_file: str) -> str:
+    """Check which display is choosen in the config file"""
+    try:
+        with open(config_file, "r") as f:
+            content = f.readlines()
+    except Exception as e:
+        print(f"Error: {e}")
+    display = ""
+    for line in content:
+        line = line.upper()
+        if "DISPLAY" in line:
+            line = line.split("=")
+            display = line[1].upper().strip()
+    return display
 
 
 def main() -> None:
     """Docstring to write."""
-    # check the arguments
     if len(sys.argv) == 1:
-        renderer = MazeRenderer()
+        print(1)
+        # renderer = MazeRenderer()
     elif len(sys.argv) == 2:
         config_file: str = sys.argv[1]
-        renderer = MazeRenderer(config_file)
+        display = check_display(config_file)
+        if display == "MLX":
+            print("mlx")
+            # renderer = MazeRenderer(config_file)
+        else:
+            ascii_d = AsciiRenderer(config_file)
+            ascii_d.create_maze()
+        
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
         return
-
-
-    # Affichage avec MiniLibX
-
-    #my_maze.print_maze_visual()
 
 
 if __name__ == "__main__":

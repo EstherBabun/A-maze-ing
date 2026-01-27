@@ -1,6 +1,7 @@
-WIDTH=70
-HEIGHT=40
-ENTRY=12,2
-ALGORITHM=Wilson
+WIDTH=20
+HEIGHT=10
+ENTRY=12,2 i
+ALGORITHM=Wilson i
 PERFECT=False
 OUTPUT_FILE=perfect_maze.txt
+Display=asii

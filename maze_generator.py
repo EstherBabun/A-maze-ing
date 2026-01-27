@@ -46,8 +46,9 @@ class MazeGenerator:
         self.perfect: bool = True
         self.entry: tuple = (0, 0)
         self.exit: tuple = (19, 9)
-        self.output_file = "maze.txt"
+        self.output_file: str = "maze.txt"
         self.algorithm: str = "WILSON"
+        self.display: str = "ASCII"
 
         # Track which settings came from config file
         custom: List[str] = []
@@ -92,7 +93,8 @@ class MazeGenerator:
             "SEED": self.seed,
             "PERFECT": self.perfect,
             "ALGORITHM": self.algorithm,
-            "OUTPUT_FILE": self.output_file
+            "OUTPUT_FILE": self.output_file,
+            "DISPLAY": self.display
         }
 
         for k, v in config_items.items():
@@ -180,11 +182,18 @@ class MazeGenerator:
                                 )
                     self.algorithm = v.upper()
                     custom.append(k)
+                elif k == "DISPLAY":
+                    if v.upper() not in ["ASCII", "MLX"]:
+                        raise ValueError(
+                                "Invalid display mode: pick ASCII or MLX"
+                                )
+                    self.display = v.upper()
+                    custom.append(k)
                 else:
                     print(
                             f"Error: Invalid keyword {k} - "
-                            "Allowed: WIDTH, HEIGHT, ENTRY, "
-                            "EXIT, OUTPUT_FILE, PERFECT, SEED, ALGORITHM"
+                            "Allowed: WIDTH, HEIGHT, ENTRY, EXIT"
+                            "OUTPUT_FILE, PERFECT, SEED, ALGORITHM, DISPLAY"
                             )
             except Exception as e:
                 print(f'Error in {k}: {e}\nSwitching to default value')
@@ -546,53 +555,3 @@ class MazeGenerator:
                 f.write(self.path + "\n")
         except Exception as e:
             print(f"Error writing file: {e}")
-
-    def print_maze_visual(self) -> None:
-        """Print a visual ASCII representation of the maze."""
-        # Top border
-        print("┌" + "─" * (self.cols * 2 - 1) + "┐")
-
-        for y in range(self.rows):
-            # Print vertical walls
-            row = "│"
-            for x in range(self.cols):
-                cell = self.grid[y][x]
-
-                # Cell marker (entry/exit)
-                if cell == self.entry_cell:
-                    row += "S"
-                elif cell == self.exit_cell:
-                    row += "E"
-                elif cell._is_42:
-                    row += "■"
-                else:
-                    row += " "
-
-                # East wall
-                if cell.walls['E']:
-                    row += "│"
-                else:
-                    row += " "
-            print(row)
-
-            # Print horizontal walls (except after last row)
-            if y < self.rows - 1:
-                row = "├"
-                for x in range(self.cols):
-                    cell = self.grid[y][x]
-
-                    # South wall
-                    if cell.walls['S']:
-                        row += "─"
-                    else:
-                        row += " "
-
-                    # Corner
-                    if x < self.cols - 1:
-                        row += "┼"
-                    else:
-                        row += "┤"
-                print(row)
-
-        # Bottom border
-        print("└" + "─" * (self.cols * 2 - 1) + "┘")
