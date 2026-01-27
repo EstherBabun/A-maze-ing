@@ -5,9 +5,9 @@
 # Created: 2026/01/20 18:33:22
 # Updated: 2026/01/20 18:02:15
 
-"""Docstring to write."""
+"""A file to create the maze"""
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 import random
 from collections import deque
 from cell import Cell
@@ -79,8 +79,8 @@ class MazeGenerator:
         self.valid_cells: int = len(self.unvisited)
 
         # store entry and exit cell objects
-        self.entry_cell: Cell = self.get_cell(*self.entry)
-        self.exit_cell: Cell = self.get_cell(*self.exit)
+        self.entry_cell: Cell | None = self.get_cell(*self.entry)
+        self.exit_cell: Cell | None = self.get_cell(*self.exit)
 
     def print_config(self, custom: List[str]) -> None:
         """Print final settings of the maze."""
@@ -219,7 +219,9 @@ class MazeGenerator:
     def _is_within_bounds(self, coord: tuple) -> bool:
         """Check if a coordinate is within maze bounds."""
         x, y = coord
-        return 0 <= x < self.cols and 0 <= y < self.rows
+        if 0 <= x < self.cols and 0 <= y < self.rows:
+            return True
+        return False
 
     def reset_default_extry(self, point_type: str, custom: List[str]) -> None:
         """Reset entry or exit to default value and remove from custom list."""
@@ -284,7 +286,7 @@ class MazeGenerator:
         Return: list of custom keys.
         """
         custom: List[str] = []
-        raw_config: Dict[str, str] = {}
+        raw_config: Dict[str, str] | None = {}
 
         # Read and parse the config file
         raw_config = self._read_config_file(file)
@@ -345,7 +347,7 @@ class MazeGenerator:
         neighbors: List[Cell] = []
         x, y = cell.coord
         for direction, (ox, oy) in cell.OFFSET.items():
-            neighbor: Cell = self.get_cell(x + ox, y + oy)
+            neighbor: Cell | None = self.get_cell(x + ox, y + oy)
             if neighbor and not neighbor._is_42:
                 neighbors.append(neighbor)
         return neighbors
@@ -353,7 +355,8 @@ class MazeGenerator:
     def wilson(self) -> None:
         """Generate an uniform random maze using Wilson's algorithm."""
         # Premier îlot du labyrinthe
-        self.entry_cell.set_visited()
+        if self.entry_cell:
+            self.entry_cell.set_visited()
 
         # walk until every cell is visited
         while self.unvisited:
@@ -364,22 +367,22 @@ class MazeGenerator:
 
     def walk(self, start_cell: Cell) -> List[tuple[Cell, str]]:
         """Walk until finding a path of unvisited cell without looping."""
-        cell_visited = {}
-        draft_path = []
-        walking = True
-        curr_cell = start_cell
+        cell_visited: Dict = {}
+        draft_path: List = []
+        walking: bool = True
+        curr_cell: Cell = start_cell
 
         while walking:
             # random choice in neighbors cells
-            next = random.choice(self.get_neighbors_cells(curr_cell))
-            dir = curr_cell.get_direction(next)
-            cell_visited[curr_cell] = dir
+            next: Cell = random.choice(self.get_neighbors_cells(curr_cell))
+            direction: str = curr_cell.get_direction(next)
+            cell_visited[curr_cell] = direction
             if next.visited:
                 break
 
             # Loop detection
             if next in draft_path:
-                loop_start_idx = draft_path.index(next)
+                loop_start_idx: int = draft_path.index(next)
                 draft_path = draft_path[:loop_start_idx + 1]
             else:
                 draft_path.append(next)
@@ -389,9 +392,9 @@ class MazeGenerator:
         path = []
         curr_cell = start_cell
         while curr_cell in cell_visited:
-            dir = cell_visited[curr_cell]
-            path.append((curr_cell, dir))
-            curr_cell = curr_cell.get_neighbor(dir)
+            direction = cell_visited[curr_cell]
+            path.append((curr_cell, direction))
+            curr_cell = curr_cell.get_neighbor(direction)
         return path
 
     def _iter_DFS(self) -> None:

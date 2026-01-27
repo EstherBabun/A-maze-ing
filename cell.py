@@ -83,5 +83,6 @@ class Cell(object):
         x, y = self.coord
         nx, ny = x + self.OFFSET[dir][0], y + self.OFFSET[dir][1]
         if 0 <= nx < self.maze.cols and 0 <= ny < self.maze.rows:
-            return self.maze.grid[ny][nx]
+            neighbor: Cell = self.maze.grid[ny][nx]
+            return neighbor
         return None
