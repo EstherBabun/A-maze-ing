@@ -9,6 +9,7 @@
 
 from typing import Dict, List, Optional
 import random
+from collections import deque
 from cell import Cell
 
 
@@ -36,7 +37,7 @@ class MazeGenerator:
             "W": (-1, 0)
             }
 
-    def __init__(self, config_file: Optional[str] = None) -> None:
+    def __init__(self, config_file: str | None) -> None:
         """Initialise the attributes of the maze with the default config."""
         # Set defaults first
         self.cols: int = 20
@@ -62,7 +63,7 @@ class MazeGenerator:
         self.tot_size: int = self.cols * self.rows
         self.path: str = ""
 
-        # remove Maze class form Cell attributes
+        # create utils lists
         self.grid: List[List[Cell]] = [
                 [Cell(x, y, self) for x in range(self.cols)]
                 for y in range(self.rows)
@@ -73,8 +74,10 @@ class MazeGenerator:
             cell for row in self.grid
             for cell in row if not cell._is_42
             ]
+        # save to total amout of valid cells
         self.valid_cells: int = len(self.unvisited)
 
+        # store entry and exit cell objects
         self.entry_cell: Cell = self.get_cell(*self.entry)
         self.exit_cell: Cell = self.get_cell(*self.exit)
 
@@ -97,6 +100,7 @@ class MazeGenerator:
                 print(f"  {k}: {v}")
             else:
                 print(f"  {k}: {v} (default)")
+        print()
 
     def _read_config_file(self, file: str) -> Dict[str, str] | None:
         """Read config file and return raw dict or None on error."""
@@ -145,13 +149,13 @@ class MazeGenerator:
         for k, v in raw_config.items():
             try:
                 if k == "WIDTH":
-                    if int(v) < 0:
-                        raise ValueError("width cannot be negative")
+                    if int(v) < 0 or int(v) == 1:
+                        raise ValueError("width cannot be one or negative")
                     self.cols = int(v)
                     custom.append(k)
                 elif k == "HEIGHT":
-                    if int(v) < 0:
-                        raise ValueError("height cannot be negative")
+                    if int(v) < 0 or int(v) == 1:
+                        raise ValueError("height cannot be one or negative")
                     self.rows = int(v)
                     custom.append(k)
                 elif k == "ENTRY":
@@ -287,8 +291,8 @@ class MazeGenerator:
         self._validate_entry_exit(custom)
 
         # Error message for "42" pattern if maze too small
-        if self.cols < 9 or self.rows < 7:
-            print("Error: Maze too small for “42” pattern")
+        if self.cols < 11 or self.rows < 9:
+            print("Warning: Maze too small for “42” pattern")
 
         self.print_config(custom)
         return custom
@@ -301,7 +305,7 @@ class MazeGenerator:
 
     def get_42_cells(self, w: int, h: int) -> List[tuple]:
         """Calculate the coordinates of the 42 cells."""
-        if w < 9 or h < 7:
+        if w < 11 or h < 9:
             return []  # No 42_walls, maze too small
         cx: int = (w - 1) // 2 if w % 2 == 0 else w // 2
         cy: int = (h - 1) // 2 if h % 2 == 0 else h // 2
@@ -333,9 +337,8 @@ class MazeGenerator:
         x, y = cell.coord
         for direction, (ox, oy) in cell.OFFSET.items():
             neighbor: Cell = self.get_cell(x + ox, y + oy)
-            if neighbor:
-                if not neighbor._is_42:
-                    neighbors.append(neighbor)
+            if neighbor and not neighbor._is_42:
+                neighbors.append(neighbor)
         return neighbors
 
     def wilson(self) -> None:
@@ -420,7 +423,8 @@ class MazeGenerator:
         dead_ends: List[Cell] = []
         for row in self.grid:
             for cell in row:
-                if cell._is_42:
+                x, y = cell.coord
+                if cell._is_42 :
                     continue
                 wall_count = sum(cell.walls.values())
                 if wall_count == 3:
@@ -429,7 +433,7 @@ class MazeGenerator:
 
     def make_imperfect(self) -> None:
         """Remove walls from dead-end cells to make the maze imperfect."""
-        percentage: float = 0.2
+        percentage: float = 0.08
         dead_ends: List[Cell] = self.get_dead_ends()
         max_removable: int = int(len(dead_ends) * percentage)
 
@@ -439,16 +443,67 @@ class MazeGenerator:
         for cell in dead_ends:
             if removed >= max_removable:
                 break
+            for direction, binary in cell.walls.items():
+                if binary == 0:
+                    neighbor = cell.get_neighbor(cell.OPPOSITE[direction])
+                    if neighbor and not neighbor._is_42:
+                        cell.set_walls(cell.OPPOSITE[direction])
+                        removed += 1
+                        break
 
-            walled_neighbors = self.get_walled_neighbors(cell)
-            if walled_neighbors:
-                direction, neighbor = random.choice(walled_neighbors)
-                cell.set_walls(direction)
-                removed += 1
+        if removed == 0:
+            for cell in dead_ends:
+                if removed == 1:
+                    break
+                for direction, binary in cell.walls.items():
+                    if binary == 0:
+                        neighbor = cell.get_neighbor(cell.OPPOSITE[direction])
+                        if neighbor and not neighbor._is_42:
+                            cell.set_walls(cell.OPPOSITE[direction])
+                            removed += 1
+                            break
 
         # print(f"Dead-ends found: {len(dead_ends)}")
         # print(f"Target walls to remove: {max_removable}")
         # print(f"Actually removed: {removed}")
+        # print()
+
+
+    def bfs(self):
+        # deque containing cells to explore
+        queue = deque([self.entry_cell])
+        # store visited cells to prevent loops or backward
+        visited = set([self.entry_cell])
+        # dict storing parent for each visited cell
+        # To reach key I come from value
+        parent = {self.entry_cell: None}  
+
+        while queue:
+            current = queue.popleft()
+            if current == self.exit_cell:
+                return parent
+            for direction, binary in current.walls.items():
+                if binary == 0:
+                    neighbor = current.get_neighbor(direction)
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        queue.append(neighbor)
+                        parent[neighbor] = current
+
+    def shortest_path(self, parent):
+        path = ""
+        current = self.exit_cell
+
+        # store path starting from exit
+        while current is not None:
+            next = parent[current]
+            if not next:
+                break
+            path += next.get_direction(current)
+            current = next
+
+        # set path attribute reversing stored path
+        self.path = path[::-1]
 
     def generate_maze(self) -> None:
         """Generate maze with the choosen algo."""
@@ -463,6 +518,9 @@ class MazeGenerator:
 
         if not self.perfect:
             self.make_imperfect()
+
+        # Search solution path
+        self.shortest_path(self.bfs())
 
         # export hex representation of the maze
         self.export_to_txt()
@@ -480,7 +538,12 @@ class MazeGenerator:
         """Generate a file with the maze in hexadecimal."""
         try:
             with open(self.output_file, "w") as f:
-                f.write(self.hex_repr)
+                f.write(self.hex_repr + "\n")
+                x, y = self.entry
+                f.write(f'{x},{y}\n')
+                x, y = self.exit
+                f.write(f'{x},{y}\n')
+                f.write(self.path + "\n")
         except Exception as e:
             print(f"Error writing file: {e}")
 

@@ -66,8 +66,9 @@ class Cell(object):
     def set_walls(self, dir) -> None:
         """Delete the two walls in direction of the given path."""
         neighbor_cell = self.get_neighbor(dir)
-        self.walls[dir] = 0
-        neighbor_cell.walls[self.OPPOSITE[dir]] = 0
+        if neighbor_cell:
+            self.walls[dir] = 0
+            neighbor_cell.walls[self.OPPOSITE[dir]] = 0
 
     def get_direction(self, neighbor) -> str:
         """Return the direction between two cells."""
@@ -80,4 +81,6 @@ class Cell(object):
         """Get the adjacent cell in the direction given."""
         x, y = self.coord
         nx, ny = x + self.OFFSET[dir][0], y + self.OFFSET[dir][1]
-        return self.maze.grid[ny][nx]
+        if 0 <= nx < self.maze.cols and 0 <= ny < self.maze.rows:
+            return self.maze.grid[ny][nx]
+        return None

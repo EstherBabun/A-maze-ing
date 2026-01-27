@@ -9,26 +9,25 @@
 
 import sys
 from maze_generator import MazeGenerator
+from maze_renderer import MazeRenderer
 
 
 def main() -> None:
     """Docstring to write."""
     # check the arguments
     if len(sys.argv) == 1:
-        # Init maze with default settings
-        my_maze: MazeGenerator = MazeGenerator()
+        renderer = MazeRenderer()
     elif len(sys.argv) == 2:
-        # take the path to the config file
         config_file: str = sys.argv[1]
-        # create maze instance
-        my_maze: MazeGenerator = MazeGenerator(config_file)
+        renderer = MazeRenderer(config_file)
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
         return
 
-    # generate maze passing "DFS" or "Wilson" as argument
-    my_maze.generate_maze()
-    my_maze.print_maze_visual()
+
+    # Affichage avec MiniLibX
+
+    #my_maze.print_maze_visual()
 
 
 if __name__ == "__main__":
