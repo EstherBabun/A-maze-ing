@@ -1,0 +1,4 @@
+Width=42
+height=22
+EXIT=40,12
+Perfect=False

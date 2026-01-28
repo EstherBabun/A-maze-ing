@@ -5,6 +5,8 @@
 # Created: 2026/01/20 18:33:22
 # Updated: 2026/01/20 18:02:15
 
+"""A module to parse a config file, generate a maze and solve it."""
+
 from typing import Dict, List
 import random
 from collections import deque
@@ -19,13 +21,21 @@ class MazeGenerator:
         cols (int): define the width of the maze
         rows (int): define the height of the maze
         seed (int | None): the seed passed to random
-        perfect (bool): True if there is juste one path between exit and start
+        perfect (bool): True if the maze is perfect
+        entry (tuple(int, int)): the entry coordinates
+        exit (tuple(int, int)): the exit coordinates
+        output_file (str): the name of the output file
         algorithm (str) : define which algorithm to use to generate the maze
+        display (str): The selected display (mlx or ascii)
+
     - Attributes created:
+        tot_size (int): the area of the maze
+        path (str): solution path stored as a string of W, S, E, N directions
         grid (list(list(Cell))): Create a Cell in every cell of the maze
         unvisited (list(Cell)): a list of every unvisited cell without 42 block
-        start (Cell): Keep the starting Cell
-        exit (Cell): Keep the exit Cell
+        valid_cells (int): total amout of accessible cells in the maze
+        entry_cell (Cell): the starting Cell
+        exit_cell (Cell): the exit Cell
     """
 
     offset: Dict[str, tuple] = {
@@ -84,7 +94,6 @@ class MazeGenerator:
         """Print final settings of the maze."""
         print("\nMaze configuration:")
         config_items = {
-            "DISPLAY": self.display,
             "WIDTH": self.cols,
             "HEIGHT": self.rows,
             "ENTRY": self.entry,
@@ -92,7 +101,8 @@ class MazeGenerator:
             "SEED": self.seed,
             "PERFECT": self.perfect,
             "ALGORITHM": self.algorithm,
-            "OUTPUT_FILE": self.output_file
+            "OUTPUT_FILE": self.output_file,
+            "DISPLAY": self.display
         }
 
         for k, v in config_items.items():
@@ -479,6 +489,7 @@ class MazeGenerator:
         # print()
 
     def bfs(self):
+        """Breadth-first-search algorithm to solve the maze."""
         # deque containing cells to explore
         queue = deque([self.entry_cell])
         # store visited cells to prevent loops or backward
@@ -500,6 +511,7 @@ class MazeGenerator:
                         parent[neighbor] = current
 
     def shortest_path(self, parent):
+        """Store the shortest path to exit as a maze attribute."""
         path = ""
         current = self.exit_cell
 

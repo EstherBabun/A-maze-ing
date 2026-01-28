@@ -5,16 +5,16 @@
 # Created: 2026/01/22 09:44:42
 # Updated: 2026/01/28 09:44:42
 
-import sys
-from mlx_renderer import MlxRenderer
-from ascii_renderer import AsciiRenderer
-
 """
 Entry point of the A-Maze-Ing program.
 
 This module parses command-line arguments and launches the
 appropriate maze renderer based on the configuration file.
 """
+
+import sys
+from mlx_renderer import MlxRenderer
+from ascii_renderer import AsciiRenderer
 
 
 def check_display(config_file: str) -> str | None:
@@ -37,7 +37,7 @@ def check_display(config_file: str) -> str | None:
                 line = line.split("=", 1)
                 display = line[1].upper().strip()
         return display
-    except Exception as e:
+    except Exception:
         return None
 
 
@@ -50,6 +50,7 @@ def main() -> None:
     """
     if len(sys.argv) == 1:
         mlx_d = MlxRenderer()
+        mlx_d.display()
     elif len(sys.argv) == 2:
         config_file: str = sys.argv[1]
         display = check_display(config_file)
@@ -58,6 +59,7 @@ def main() -> None:
             ascii_d.main()
         else:
             mlx_d = MlxRenderer(config_file)
+            mlx_d.display()
 
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
