@@ -5,7 +5,7 @@
 # Created: 2026/01/20 18:33:22
 # Updated: 2026/01/20 18:02:15
 
-from typing import Dict, List
+from typing import Dict, List, Deque, Set
 import random
 from collections import deque
 from cell import Cell
@@ -358,10 +358,11 @@ class MazeGenerator:
 
         # walk until every cell is visited
         while self.unvisited:
-            random_cell = random.choice(self.unvisited)
+            random_cell: Cell = random.choice(self.unvisited)
             for cell, dir in self.walk(random_cell):
                 cell.set_visited()
-                cell.set_walls(dir)
+                if dir:
+                    cell.set_walls(dir)
 
     def walk(self, start_cell: Cell) -> List[tuple[Cell, str]]:
         """Walk until finding a path of unvisited cell without looping."""
@@ -373,7 +374,7 @@ class MazeGenerator:
         while walking:
             # random choice in neighbors cells
             next: Cell = random.choice(self.get_neighbors_cells(curr_cell))
-            direction: str = curr_cell.get_direction(next)
+            direction: str | None = curr_cell.get_direction(next)
             cell_visited[curr_cell] = direction
             if next.visited:
                 break
@@ -387,7 +388,7 @@ class MazeGenerator:
             curr_cell = next
 
         # final way reconstruction
-        path = []
+        path: List = []
         curr_cell = start_cell
         while curr_cell in cell_visited:
             direction = cell_visited[curr_cell]
@@ -398,7 +399,9 @@ class MazeGenerator:
     def _iter_DFS(self) -> None:
         """Apply iterative DFS algo."""
         stack: List[Cell] = []
-        current: Cell = self.entry_cell
+        current: Cell | None = self.entry_cell
+        if current is None:
+            raise ValueError("Entry cell is None")
         current.set_visited()
 
         while self.unvisited:
@@ -478,17 +481,14 @@ class MazeGenerator:
         # print(f"Actually removed: {removed}")
         # print()
 
-    def bfs(self):
-        # deque containing cells to explore
-        queue = deque([self.entry_cell])
-        # store visited cells to prevent loops or backward
-        visited = set([self.entry_cell])
-        # dict storing parent for each visited cell
-        # To reach key I come from value
-        parent = {self.entry_cell: None}
+    def bfs(self) -> Dict[Cell, Cell | None]:
+        if self.entry_cell:
+            queue: Deque[Cell] = deque([self.entry_cell])
+        visited: Set = set([self.entry_cell])
+        parent: Dict = {self.entry_cell: None}
 
         while queue:
-            current = queue.popleft()
+            current: Cell = queue.popleft()
             if current == self.exit_cell:
                 return parent
             for direction, binary in current.walls.items():
@@ -499,7 +499,7 @@ class MazeGenerator:
                         queue.append(neighbor)
                         parent[neighbor] = current
 
-    def shortest_path(self, parent):
+    def shortest_path(self, parent: Dict) -> None:
         path = ""
         current = self.exit_cell
 
@@ -516,10 +516,8 @@ class MazeGenerator:
 
     def generate_maze(self) -> None:
         """Generate maze with the choosen algo."""
-        # set seed: custom if configured else None
         random.seed(self.seed)
 
-        # select algo
         if self.algorithm == "DFS":
             self._iter_DFS()
         elif self.algorithm == "WILSON":
@@ -527,15 +525,11 @@ class MazeGenerator:
 
         if not self.perfect:
             self.make_imperfect()
-
-        # Search solution path
         self.shortest_path(self.bfs())
-
-        # export hex representation of the maze
         self.export_to_txt()
 
     @property
-    def hex_repr(self):
+    def hex_repr(self) -> str:
         """Hex representation of the maze."""
         maze_hex: str = ""
         for y in range(self.rows):
