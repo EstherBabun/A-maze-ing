@@ -47,6 +47,7 @@ class MazeGenerator:
         self.output_file: str = "maze.txt"
         self.algorithm: str = "WILSON"
         self.display: str = "ASCII"
+        self.config_file = config_file
 
         # Track which settings came from config file
         custom: List[str] = []
@@ -549,3 +550,9 @@ class MazeGenerator:
                 f.write(self.path + "\n")
         except Exception as e:
             print(f"Error writing file: {e}")
+
+    def display_maze(self):
+        if self.display == "ASCII":
+            from ascii_renderer import AsciiRenderer
+            ascii_d: AsciiRenderer = AsciiRenderer(self)
+            ascii_d.display_ascii()

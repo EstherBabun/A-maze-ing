@@ -13,21 +13,15 @@ class AsciiRenderer:
     Render a maze in the terminal using ASCII characters.
     """
 
-    def __init__(self, config: str) -> None:
+    def __init__(self, maze: MazeGenerator) -> None:
         """
         Initialize the ASCII renderer.
 
         Args:
-            config (str): Name of the configuration file.
+            maze (MazeGenerator): The instance maze to display.
         """
-        self.name: str = ""
-        self.config: str = config
-        self.maze_height: int = 0
-        self.maze_width: int = 0
-        self.maze: str = ""
-        self.entry: tuple = ()
-        self.exit: tuple = ()
-        self.path: str = ""
+        self.maze = maze
+        self.maze_hex: str = maze.hex_repr
 
     @staticmethod
     def show_menu() -> None:
@@ -58,23 +52,13 @@ class AsciiRenderer:
                 wrong_choice = True
                 return choice, wrong_choice
 
-    def main(self) -> None:
+    def new_maze(self) -> None:
         """
-        Generate a maze and display it.
-
-        This method creates a maze using MazeGenerator and renders it
-        in ASCII format.
+        Generate a new maze with the same configuration and display it.
         """
-        maze = MazeGenerator(self.config)
-        maze.generate_maze()
-        self.name = maze.output_file
-        self.maze_height = maze.rows
-        self.maze_width = maze.cols
-        self.maze = maze.hex_repr
-        self.entry = maze.entry
-        self.exit = maze.exit
-        self.path = maze.path
-        self.display_ascii()
+        new_maze: MazeGenerator = MazeGenerator(self.maze.config_file)
+        new_maze.generate_maze()
+        new_maze.display_maze()
 
     def coordinates_path(self) -> list[tuple[int, int]]:
         """
@@ -84,8 +68,8 @@ class AsciiRenderer:
             list[tuple[int, int]]: Coordinates of the shortest solution path.
         """
         path = []
-        cx, cy = self.entry
-        for direction in self.path:
+        cx, cy = self.maze.entry
+        for direction in self.maze.path:
             x, y = MazeGenerator.offset[direction]
             cx += x
             cy += y
@@ -105,18 +89,18 @@ class AsciiRenderer:
         end_color = "\033[0m"
         line_top_border = (
             f"{wall_color}+{end_color}"
-            + f"{wall_color}---+{end_color}" * self.maze_width
+            + f"{wall_color}---+{end_color}" * self.maze.cols
         )
         print(line_top_border)
-        for line in self.maze[:-1].split("\n"):
+        for line in self.maze_hex[:-1].split("\n"):
             line_walls = f"{wall_color}|{end_color}"
             line_bottom = f"{wall_color}+{end_color}"
             acc_hexa = 0
             for hexa in line:
                 # check the content
-                if (acc_hexa, acc_line) == self.entry:
+                if (acc_hexa, acc_line) == self.maze.entry:
                     cell_content = "\033[32m■\033[0m"
-                elif (acc_hexa, acc_line) == self.exit:
+                elif (acc_hexa, acc_line) == self.maze.exit:
                     cell_content = "\033[31m■\033[0m"
                 elif hexa == "F":
                     cell_content = "■"
@@ -172,7 +156,7 @@ class AsciiRenderer:
                     choice, wrong = self.get_choice()
                 print("\033[2J")
             if choice == '1':
-                self.main()
+                self.new_maze()
                 break
             elif choice == '2':
                 print("\033[2J")

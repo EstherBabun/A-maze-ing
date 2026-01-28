@@ -6,9 +6,7 @@
 # Updated: 2026/01/28 09:44:42
 
 import sys
-# from maze_generator import MazeGenerator
-# from maze_renderer import MazeRenderer
-from ascii_renderer import AsciiRenderer
+from maze_generator import MazeGenerator
 from typing import List
 
 """
@@ -58,12 +56,16 @@ def main() -> None:
     elif len(sys.argv) == 2:
         config_file: str = sys.argv[1]
         display: str = check_display(config_file)
+        maze: MazeGenerator = MazeGenerator(config_file)
+        maze.generate_maze()
+        maze.display_maze()
+
+        # peut etre mis dans la classe directement et du coup plus besoin de la première fonction
         if display == "MLX":
             print("mlx")
             # renderer = MazeRenderer(config_file)
         else:
-            ascii_d: AsciiRenderer = AsciiRenderer(config_file)
-            ascii_d.main()
+            maze.display_maze()
 
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
