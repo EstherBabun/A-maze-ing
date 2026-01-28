@@ -5,8 +5,6 @@
 # Created: 2026/01/20 18:33:22
 # Updated: 2026/01/20 18:02:15
 
-"""A file to create the maze"""
-
 from typing import Dict, List
 import random
 from collections import deque
