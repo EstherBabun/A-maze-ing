@@ -5,9 +5,7 @@
 # Created: 2026/01/20 18:33:22
 # Updated: 2026/01/20 18:02:15
 
-"""Docstring to write."""
-
-from typing import Dict, List, Optional
+from typing import Dict, List
 import random
 from collections import deque
 from cell import Cell
@@ -46,8 +44,9 @@ class MazeGenerator:
         self.perfect: bool = True
         self.entry: tuple = (0, 0)
         self.exit: tuple = (19, 9)
-        self.output_file = "maze.txt"
+        self.output_file: str = "maze.txt"
         self.algorithm: str = "WILSON"
+        self.display: str = "ASCII"
 
         # Track which settings came from config file
         custom: List[str] = []
@@ -78,8 +77,8 @@ class MazeGenerator:
         self.valid_cells: int = len(self.unvisited)
 
         # store entry and exit cell objects
-        self.entry_cell: Cell = self.get_cell(*self.entry)
-        self.exit_cell: Cell = self.get_cell(*self.exit)
+        self.entry_cell: Cell | None = self.get_cell(*self.entry)
+        self.exit_cell: Cell | None = self.get_cell(*self.exit)
 
     def print_config(self, custom: List[str]) -> None:
         """Print final settings of the maze."""
@@ -92,7 +91,8 @@ class MazeGenerator:
             "SEED": self.seed,
             "PERFECT": self.perfect,
             "ALGORITHM": self.algorithm,
-            "OUTPUT_FILE": self.output_file
+            "OUTPUT_FILE": self.output_file,
+            "DISPLAY": self.display
         }
 
         for k, v in config_items.items():
@@ -180,11 +180,18 @@ class MazeGenerator:
                                 )
                     self.algorithm = v.upper()
                     custom.append(k)
+                elif k == "DISPLAY":
+                    if v.upper() not in ["ASCII", "MLX"]:
+                        raise ValueError(
+                                "Invalid display mode: pick ASCII or MLX"
+                                )
+                    self.display = v.upper()
+                    custom.append(k)
                 else:
                     print(
                             f"Error: Invalid keyword {k} - "
-                            "Allowed: WIDTH, HEIGHT, ENTRY, "
-                            "EXIT, OUTPUT_FILE, PERFECT, SEED, ALGORITHM"
+                            "Allowed: WIDTH, HEIGHT, ENTRY, EXIT"
+                            "OUTPUT_FILE, PERFECT, SEED, ALGORITHM, DISPLAY"
                             )
             except Exception as e:
                 print(f'Error in {k}: {e}\nSwitching to default value')
@@ -210,7 +217,9 @@ class MazeGenerator:
     def _is_within_bounds(self, coord: tuple) -> bool:
         """Check if a coordinate is within maze bounds."""
         x, y = coord
-        return 0 <= x < self.cols and 0 <= y < self.rows
+        if 0 <= x < self.cols and 0 <= y < self.rows:
+            return True
+        return False
 
     def reset_default_extry(self, point_type: str, custom: List[str]) -> None:
         """Reset entry or exit to default value and remove from custom list."""
@@ -275,7 +284,7 @@ class MazeGenerator:
         Return: list of custom keys.
         """
         custom: List[str] = []
-        raw_config: Dict[str, str] = {}
+        raw_config: Dict[str, str] | None = {}
 
         # Read and parse the config file
         raw_config = self._read_config_file(file)
@@ -336,7 +345,7 @@ class MazeGenerator:
         neighbors: List[Cell] = []
         x, y = cell.coord
         for direction, (ox, oy) in cell.OFFSET.items():
-            neighbor: Cell = self.get_cell(x + ox, y + oy)
+            neighbor: Cell | None = self.get_cell(x + ox, y + oy)
             if neighbor and not neighbor._is_42:
                 neighbors.append(neighbor)
         return neighbors
@@ -344,7 +353,8 @@ class MazeGenerator:
     def wilson(self) -> None:
         """Generate an uniform random maze using Wilson's algorithm."""
         # Premier îlot du labyrinthe
-        self.entry_cell.set_visited()
+        if self.entry_cell:
+            self.entry_cell.set_visited()
 
         # walk until every cell is visited
         while self.unvisited:
@@ -355,22 +365,22 @@ class MazeGenerator:
 
     def walk(self, start_cell: Cell) -> List[tuple[Cell, str]]:
         """Walk until finding a path of unvisited cell without looping."""
-        cell_visited = {}
-        draft_path = []
-        walking = True
-        curr_cell = start_cell
+        cell_visited: Dict = {}
+        draft_path: List = []
+        walking: bool = True
+        curr_cell: Cell = start_cell
 
         while walking:
             # random choice in neighbors cells
-            next = random.choice(self.get_neighbors_cells(curr_cell))
-            dir = curr_cell.get_direction(next)
-            cell_visited[curr_cell] = dir
+            next: Cell = random.choice(self.get_neighbors_cells(curr_cell))
+            direction: str = curr_cell.get_direction(next)
+            cell_visited[curr_cell] = direction
             if next.visited:
                 break
 
             # Loop detection
             if next in draft_path:
-                loop_start_idx = draft_path.index(next)
+                loop_start_idx: int = draft_path.index(next)
                 draft_path = draft_path[:loop_start_idx + 1]
             else:
                 draft_path.append(next)
@@ -380,9 +390,9 @@ class MazeGenerator:
         path = []
         curr_cell = start_cell
         while curr_cell in cell_visited:
-            dir = cell_visited[curr_cell]
-            path.append((curr_cell, dir))
-            curr_cell = curr_cell.get_neighbor(dir)
+            direction = cell_visited[curr_cell]
+            path.append((curr_cell, direction))
+            curr_cell = curr_cell.get_neighbor(direction)
         return path
 
     def _iter_DFS(self) -> None:
@@ -424,7 +434,7 @@ class MazeGenerator:
         for row in self.grid:
             for cell in row:
                 x, y = cell.coord
-                if cell._is_42 :
+                if cell._is_42:
                     continue
                 wall_count = sum(cell.walls.values())
                 if wall_count == 3:
@@ -468,7 +478,6 @@ class MazeGenerator:
         # print(f"Actually removed: {removed}")
         # print()
 
-
     def bfs(self):
         # deque containing cells to explore
         queue = deque([self.entry_cell])
@@ -476,7 +485,7 @@ class MazeGenerator:
         visited = set([self.entry_cell])
         # dict storing parent for each visited cell
         # To reach key I come from value
-        parent = {self.entry_cell: None}  
+        parent = {self.entry_cell: None}
 
         while queue:
             current = queue.popleft()
@@ -546,53 +555,3 @@ class MazeGenerator:
                 f.write(self.path + "\n")
         except Exception as e:
             print(f"Error writing file: {e}")
-
-    def print_maze_visual(self) -> None:
-        """Print a visual ASCII representation of the maze."""
-        # Top border
-        print("┌" + "─" * (self.cols * 2 - 1) + "┐")
-
-        for y in range(self.rows):
-            # Print vertical walls
-            row = "│"
-            for x in range(self.cols):
-                cell = self.grid[y][x]
-
-                # Cell marker (entry/exit)
-                if cell == self.entry_cell:
-                    row += "S"
-                elif cell == self.exit_cell:
-                    row += "E"
-                elif cell._is_42:
-                    row += "■"
-                else:
-                    row += " "
-
-                # East wall
-                if cell.walls['E']:
-                    row += "│"
-                else:
-                    row += " "
-            print(row)
-
-            # Print horizontal walls (except after last row)
-            if y < self.rows - 1:
-                row = "├"
-                for x in range(self.cols):
-                    cell = self.grid[y][x]
-
-                    # South wall
-                    if cell.walls['S']:
-                        row += "─"
-                    else:
-                        row += " "
-
-                    # Corner
-                    if x < self.cols - 1:
-                        row += "┼"
-                    else:
-                        row += "┤"
-                print(row)
-
-        # Bottom border
-        print("└" + "─" * (self.cols * 2 - 1) + "┘")
