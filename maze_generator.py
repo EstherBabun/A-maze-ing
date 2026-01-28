@@ -434,7 +434,7 @@ class MazeGenerator:
         for row in self.grid:
             for cell in row:
                 x, y = cell.coord
-                if cell._is_42 :
+                if cell._is_42:
                     continue
                 wall_count = sum(cell.walls.values())
                 if wall_count == 3:
@@ -478,7 +478,6 @@ class MazeGenerator:
         # print(f"Actually removed: {removed}")
         # print()
 
-
     def bfs(self):
         # deque containing cells to explore
         queue = deque([self.entry_cell])
@@ -486,7 +485,7 @@ class MazeGenerator:
         visited = set([self.entry_cell])
         # dict storing parent for each visited cell
         # To reach key I come from value
-        parent = {self.entry_cell: None}  
+        parent = {self.entry_cell: None}
 
         while queue:
             current = queue.popleft()

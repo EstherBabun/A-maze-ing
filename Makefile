@@ -11,20 +11,16 @@ PYTHON_VENV := $(VENV)/bin/python
 
 SRC := a_maze_ing.py
 CONFIG := config.txt
-AFFICHAGE := maze_renderer.py
 
-venv_creation:
+install:
 	python3.12 -m venv venv
-	$(PYTHON) install -r requirements.txt
+	$(PYTHON) -m pip install -r requirements.txt
 
 venv_activate:
 	source $(VENV)/bin/activate
 
 run:
 	$(PYTHON) $(SRC) $(CONFIG)
-
-play:
-	$(PYTHON) $(AFFICHAGE)
 
 debug:
 	$(PYTHON_VENV) -m pdb $(MAIN)

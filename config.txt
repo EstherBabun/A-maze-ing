@@ -4,4 +4,4 @@ ENTRY=12,2
 ALGORITHM=Wilson
 PERFECT=False
 OUTPUT_FILE=perfect_maze.txt
-Display=asii
+Display=ascii
