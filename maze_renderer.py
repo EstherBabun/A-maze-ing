@@ -5,9 +5,12 @@
 # Created: 2026/01/22 12:35:09
 # Updated: 2026/01/22 12:35:09
 
-from mlx import Mlx
-from typing import List, Tuple, Dict, Optional
+from __future__ import annotations
 from maze_generator import MazeGenerator
+from mlx import Mlx
+from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from cell import CELL
 
 class MazeRenderer:
     """A class holding the renderer's specifications."""
@@ -47,15 +50,22 @@ class MazeRenderer:
         self.config_file: str = ""
         self.maze_w: int = 0
         self.maze_h: int = 0
-        self.content: List[str] = []
+        self.grid: List[List[Cell]] = []
         self.entry = (0, 0)
         self.exit = (0, 0)
-        self.coord_path: List[Tuples[int, int]] = []
+        self.solution: bool = False
+        self.soluce_path: List[Tuples[int, int]] = []
+
+        # declare current coordinates and path for navigation
+        self.current_cell: Cell = None
+        self.navigation_path: List[Tuple[int, int]] = []
 
         # create a maze
         self.create_maze(config)
 
         # declare dimensions for MLX objects
+        self.screen_w: int = 0
+        self.screen_h: int = 0
         self.window_w: int = 0
         self.window_h: int = 0
         self.margin: Tuple[str, int] = ("", 0)
@@ -95,21 +105,22 @@ class MazeRenderer:
         self.color_wall = green["wall"]
         self.color_bg = 0x1A1A1A
         self.color_path = green["path"]
-        self.color_cursor = 0x1F1F1F
+        self.color_cursor = 0x005080
+
 
         # create configure and launch renderer
         self.config_launch_renderer()
 
-    def convert_path(self, path) -> None:
+    def convert_soluce_path(self, path) -> None:
         """Convert directions to coordinates."""
-        coord_path: List[Tuple[int, int]] = []
+        soluce_path: List[Tuple[int, int]] = []
         x, y = self.entry
         for direction in path:
             ox, oy = self.OFFSET[direction]
             next_coord = (x + ox, y + oy)
-            coord_path.append(next_coord)
+            soluce_path.append(next_coord)
             x, y = next_coord
-        self.coord_path = coord_path[:-1]
+        self.soluce_path = soluce_path[:-1]
 
     def create_maze(self, config: str) -> None:
         self.config_file = config
@@ -120,15 +131,13 @@ class MazeRenderer:
         # store maze data
         self.maze_w = maze_gen.cols
         self.maze_h = maze_gen.rows
-        self.content = [
-                line.strip() for line
-                in maze_gen.hex_repr.split("\n")
-                if line.strip()
-                ]
+        self.grid = maze_gen.grid
         self.entry = maze_gen.entry
         self.exit = maze_gen.exit
-        self.convert_path(maze_gen.path)
-        self.toggle_path: bool = False
+        self.convert_soluce_path(maze_gen.path)
+        self.solution: bool = False
+        self.current_cell = maze_gen.entry_cell
+        self.navigation_path: List[Tuple[int, int]] = [maze_gen.entry]
 
     def set_cell_size_and_wall_thickness(self) -> None:
         """Calculate cell size according to screen and maze size."""
@@ -137,6 +146,10 @@ class MazeRenderer:
         if ret != 0:
             screen_width, screen_height = 1920, 1080
             print("Warning: Using default screen size")
+        
+        # store screen dimensions as attributes
+        self.screen_w = screen_width
+        self.screen_h = screen_height
 
         # Calculate usable screen space (90% of total scren size)
         usable_width: int = int(screen_width * 0.90)
@@ -167,9 +180,6 @@ class MazeRenderer:
 
         # Enforce minimum
         if self.cell_size < 12:
-            print("Warning: Maze is too large!")
-            print("Consider generating a smaller maze for better visibility")
-            print("Recommended maze size: 120x60\n")
             self.cell_size = 12
 
         # adapt wall thickness to cell size
@@ -195,6 +205,18 @@ class MazeRenderer:
             # Wide/square maze: add horiz space
             self.window_w = self.img_w
             self.window_h = int(self.img_h + self.margin[1])
+
+        # enforce minimum window size 
+        if self.window_h < 180:
+            self.window_h = 180
+        if self.window_w < 240:
+            self.window_w = 240
+
+        # Warning against oversized window
+        if self.window_h >= self.screen_h or self.window_w >= self.screen_w:
+            print("Warning: Maze is too large!")
+            print("Consider generating a smaller maze for better visibility")
+            print("Recommended maze size: 120x60\n")
 
     def config_launch_renderer(self) -> None:
         self.set_cell_size_and_wall_thickness()
@@ -222,10 +244,12 @@ class MazeRenderer:
     def put_commands(self) -> None:
         self.my_string_put(10, 0xFFFF00, "Start")
         self.my_string_put(30, 0x00FFFF, "Finish")
-        self.my_string_put(50, 0xFFFFFF, "s: toggle solution")
-        self.my_string_put(70, 0xFFFFFF, "c: toggle colors")
-        self.my_string_put(90, 0xFFFFFF, "r: generate new maze")
-        self.my_string_put(110, 0xFFFFFF, "q: quit")
+        self.my_string_put(50, 0xFFFFFF, "Arrow keys: navigate")
+        self.my_string_put(70, 0xFFFFFF, "d: delete path")
+        self.my_string_put(90, 0xFFFFFF, "c: toggle colors")
+        self.my_string_put(110, 0xFFFFFF, "s: toggle solution")
+        self.my_string_put(130, 0xFFFFFF, "r: generate new maze")
+        self.my_string_put(150, 0xFFFFFF, "q: quit")
 
     def my_mlx_pixel_put(self, x, y, color):
         """Fast pixel writing to image buffer."""
@@ -248,74 +272,84 @@ class MazeRenderer:
             for x in range(start_x, end_x):
                 self.my_mlx_pixel_put(x, y, color)
 
-    def draw_cell(self, i, j, color):
+    def draw_cell(self, x, y, color):
         """Fast pixel writing to image buffer."""
-        start_x = j * self.cell_size
+        start_x = x * self.cell_size
         end_x = start_x + self.cell_size
-        start_y = i * self.cell_size
+        start_y = y * self.cell_size
         end_y = start_y + self.cell_size
         self.draw(start_x, end_x, start_y, end_y, color)
 
-    def draw_entry_exit(self, i, j, color) -> None:
-        fraction: int = self.cell_size // 3
-        start_x = j * self.cell_size + fraction
-        end_x = start_x + fraction
-        start_y = i * self.cell_size + fraction
-        end_y = start_y + fraction
-        self.draw(start_x, end_x, start_y, end_y, color)
-
-    def draw_north_wall(self, i, j, color):
-        start_x = j * self.cell_size
+    def draw_north_wall(self, x, y, color):
+        start_x = x * self.cell_size
         end_x = start_x + self.cell_size
-        start_y = i * self.cell_size
+        start_y = y * self.cell_size
         end_y = start_y + self.wall_thickness
         self.draw(start_x, end_x, start_y, end_y, color)
 
-    def draw_south_wall(self, i, j, color):
-        start_x = j * self.cell_size
+    def draw_south_wall(self, x, y, color):
+        start_x = x * self.cell_size
         end_x = start_x + self.cell_size
-        end_y = i * self.cell_size + self.cell_size
+        end_y = y * self.cell_size + self.cell_size
         start_y = end_y - self.wall_thickness
         self.draw(start_x, end_x, start_y, end_y, color)
 
-    def draw_east_wall(self, i, j, color):
-        end_x = j * self.cell_size + self.cell_size
+    def draw_east_wall(self, x, y, color):
+        end_x = x * self.cell_size + self.cell_size
         start_x = end_x - self.wall_thickness
-        start_y = i * self.cell_size
+        start_y = y * self.cell_size
         end_y = start_y + self.cell_size
         self.draw(start_x, end_x, start_y, end_y, color)
 
-    def draw_west_wall(self, i, j, color):
-        start_x = j * self.cell_size
+    def draw_west_wall(self, x, y, color):
+        start_x = x * self.cell_size
         end_x = start_x + self.wall_thickness
-        start_y = i * self.cell_size
+        start_y = y * self.cell_size
         end_y = start_y + self.cell_size
         self.draw(start_x, end_x, start_y, end_y, color)
+
+    def draw_walls(self, x: int, y: int) -> None:
+        """Draw all walls of the cell at given coordinates."""
+        cell: Cell = self.maze_gen.get_cell(x, y)
+        if cell is not None:
+            if cell.walls["W"] == 1:
+                self.draw_west_wall(x, y, self.color_wall)
+            if cell.walls["S"] == 1:
+                self.draw_south_wall(x, y, self.color_wall)
+            if cell.walls["E"] == 1:
+                self.draw_east_wall(x, y, self.color_wall)
+            if cell.walls["N"] == 1:
+                self.draw_north_wall(x, y, self.color_wall)
+
+    def draw_entry_exit(self, x, y) -> None:
+        fraction: int = self.cell_size // 3
+        start_x = x * self.cell_size + fraction
+        end_x = start_x + fraction
+        start_y = y * self.cell_size + fraction
+        end_y = start_y + fraction
+        if (x, y) == self.entry:
+            self.draw(start_x, end_x, start_y, end_y, self.BLUE)
+        elif (x, y) == self.exit:
+            self.draw(start_x, end_x, start_y, end_y, self.YELLOW)
 
     def create_image(self):
         # Draw cases
-        for i, line in enumerate(self.content):
-            for j, cell in enumerate(line):
-                if cell == 'F':
-                    self.draw_cell(i, j, self.color_wall)
-                elif self.toggle_path:
-                    if (j, i) in self.coord_path:
-                        self.draw_cell(i, j, self.color_path)
+        for row in self.grid:
+            for cell in row:
+                x, y = cell.coord
+                # draw cells
+                if cell._is_42:
+                    self.draw_cell(x, y, self.color_wall)
+                elif self.solution:
+                    if (x, y) in self.soluce_path:
+                        self.draw_cell(x, y, self.color_path)
                 else:
-                    self.draw_cell(i, j, self.color_bg)
+                    self.draw_cell(x, y, self.color_bg)
                 # Draw walls
-                if cell in "13579BD":
-                    self.draw_north_wall(i, j, self.color_wall)
-                if cell in "4567CDE":
-                    self.draw_south_wall(i, j, self.color_wall)
-                if cell in "2367ABE":
-                    self.draw_east_wall(i, j, self.color_wall)
-                if cell in "89ABCDE":
-                    self.draw_west_wall(i, j, self.color_wall)
-                if (j, i) == self.entry: 
-                    self.draw_entry_exit(i, j, self.BLUE)
-                if (j, i) == self.exit:
-                    self.draw_entry_exit(i, j, self.YELLOW)
+                self.draw_walls(x, y)
+                # Draw entry and exit
+                if (x, y) == self.entry or (x, y) == self.exit: 
+                    self.draw_entry_exit(x, y,)
 
         # Display the image
         self.m.mlx_put_image_to_window(
@@ -326,61 +360,109 @@ class MazeRenderer:
     
     def toggle_solution(self, color) -> None:
         # Draw(COLOR_PATH) or erase(COLOR_BG) solution
-        for i, line in enumerate(self.content):
-            for j, cell in enumerate(line):
-                if (j, i) in self.coord_path:
-                    self.draw_cell(i, j, color)
-                    if cell in "13579BD":
-                        self.draw_north_wall(i, j, self.color_wall)
-                    if cell in "4567CDE":
-                        self.draw_south_wall(i, j, self.color_wall)
-                    if cell in "2367ABE":
-                        self.draw_east_wall(i, j, self.color_wall)
-                    if cell in "89ABCDE":
-                        self.draw_west_wall(i, j, self.color_wall)
+        for row in self.grid:
+            for cell in row:
+                x, y = cell.coord
+                if (x, y) in self.soluce_path:
+                    self.draw_cell(x, y, color)
+                    if not self.solution and (x, y) in self.navigation_path:
+                        self.draw_cell(x, y, self.color_cursor)
+                    self.draw_walls(x, y)
 
         # Display the image
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
     def toggle_colors(self) -> None:
-        for i, line in enumerate(self.content):
-            for j, cell in enumerate(line):
-                if (j, i) in self.coord_path and self.toggle_path:
-                    self.draw_cell(i, j, self.color_path)
-                if cell == 'F':
-                    self.draw_cell(i, j, self.color_wall)
-                if cell in "13579BD":
-                    self.draw_north_wall(i, j, self.color_wall)
-                if cell in "4567CDE":
-                    self.draw_south_wall(i, j, self.color_wall)
-                if cell in "2367ABE":
-                    self.draw_east_wall(i, j, self.color_wall)
-                if cell in "89ABCDE":
-                    self.draw_west_wall(i, j, self.color_wall)
+        for row in self.grid:
+            for cell in row:
+                x, y = cell.coord
+                if (x, y) in self.navigation_path and (x, y) != self.entry:
+                    self.draw_cell(x, y, self.color_cursor)
+                if self.solution and (x, y) in self.soluce_path:
+                    self.draw_cell(x, y, self.color_path)
+                if cell._is_42:
+                    self.draw_cell(x, y, self.color_wall)
+                self.draw_walls(x, y)
+
+        # Display the image
+        self.m.mlx_put_image_to_window(
+            self.ptr, self.win_ptr, self.img_ptr, 0, 0)
+
+
+    def delete_navigation_path(self) -> None:
+        """Remove the entire navigation path."""
+        for (x, y) in self.navigation_path:
+            if (x, y) != self.entry:
+                if self.solution and (x, y) not in self.soluce_path:
+                    self.draw_cell(x, y, self.color_bg)
+                    self.draw_walls(x, y)
+                else:
+                    self.draw_cell(x, y, self.color_bg)
+                    self.draw_walls(x, y)
+        # reset starting point and navigation path
+        self.current_cell = self.maze_gen.entry_cell
+        self.navigation_path = [self.entry]
+
+        # Display the image
+        self.m.mlx_put_image_to_window(
+            self.ptr, self.win_ptr, self.img_ptr, 0, 0)
+
+    def navigate(self, direction) -> None:
+        """Navigate in the maze, coloring cell in given direction."""
+        current = self.current_cell
+        next_cell = current.get_neighbor(direction)
+        if next_cell is not None and current.walls[direction] == 0:
+            x, y = next_cell.coord
+            if next_cell.coord == self.exit:
+                return
+            if next_cell.coord in self.navigation_path:
+                idx = self.navigation_path.index(next_cell.coord)
+                to_delete = self.navigation_path[idx + 1:]
+                self.navigation_path = self.navigation_path[:idx + 1]
+                for (dx, dy) in to_delete:
+                    if self.solution and (dx, dy) in self.soluce_path:
+                        self.draw_cell(dx, dy, self.color_path)
+                    else:
+                        self.draw_cell(dx, dy, self.color_bg)
+                    if (x, y) == self.entry or (x, y) == self.exit: 
+                        self.draw_entry_exit(x, y,)
+                    self.draw_walls(dx, dy)
+            else:
+                if self.solution and (x, y) in self.soluce_path:
+                    self.draw_cell(x, y, self.color_path)
+                else:
+                    self.draw_cell(x, y, self.color_cursor)
+                self.draw_walls(x, y)
+                self.navigation_path.append(next_cell.coord)
+            self.current_cell = next_cell
 
         # Display the image
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
     def mykey(self, keynum, param):
-        #navigation: Dict[str, int] = {
-        #        65361: "W",
-        #        65364: "S",
-        #        65363: "E",
-        #        65362: "N"
-        #        }
-        #print(f"Got keynum {keynum}")
-        # s key
+        """Record key events and trigger associated method."""
+        # debug
+        # print(f"Got keynum {keynum}")
+        navigation: Dict[str, int] = {
+                65361: "W",
+                65364: "S",
+                65363: "E",
+                65362: "N"
+                }
+
+        # s key -> toggle solution
         if keynum == 115:
-            self.toggle_path = not self.toggle_path
-            if self.toggle_path:
+            self.solution = not self.solution
+            if self.solution:
                 print("Showing solution")
                 self.toggle_solution(self.color_path)
             else:
                 print("Hiding solution")
                 self.toggle_solution(self.color_bg)
-        # c key
+
+        # c key -> toggle colors
         elif keynum == 99:
             next_idx = (self.color_idx + 1) % len(self.color_palettes)
             self.color_idx = next_idx
@@ -389,7 +471,8 @@ class MazeRenderer:
             self.color_path = palette["path"]
             self.toggle_colors()
             print(f"Switched to {self.palette_names[next_idx]} color palette")
-        # r key
+
+        # r key -> re-generate new maze
         elif keynum == 114:
             print("Generating new maze...")
             self.m.mlx_clear_window(self.ptr, self.win_ptr)
@@ -398,10 +481,17 @@ class MazeRenderer:
             self.m.mlx_loop_exit(self.ptr)
             # create new maze
             self.create_maze(self.config_file)
+            self.navigation_path = [self.entry]
             # create configure and launch renderer
             self.config_launch_renderer()
-        #elif keynum in navigation.keys():
-        #        self.navigate(navigation[keynum])
+
+        # arrow keys -> create navigation path
+        elif keynum in navigation.keys():
+                self.navigate(navigation[keynum])
+        # d key -> delete navigation path
+        elif keynum == 100:
+            self.delete_navigation_path()
+        # q key
         elif keynum == 113:
             self.gere_close(None)
              
