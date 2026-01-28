@@ -12,7 +12,7 @@ from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from cell import CELL
 
-class MazeRenderer:
+class MlxRenderer:
     """A class holding the renderer's specifications."""
     
     YELLOW = 0xFFFF00

@@ -6,8 +6,7 @@
 # Updated: 2026/01/28 09:44:42
 
 import sys
-# from maze_generator import MazeGenerator
-# from maze_renderer import MazeRenderer
+from mlx_renderer import MlxRenderer
 from ascii_renderer import AsciiRenderer
 
 """
@@ -18,7 +17,7 @@ appropriate maze renderer based on the configuration file.
 """
 
 
-def check_display(config_file: str) -> str:
+def check_display(config_file: str) -> str | None:
     """
     Read the configuration file and extract the display mode.
 
@@ -31,15 +30,15 @@ def check_display(config_file: str) -> str:
     try:
         with open(config_file, "r") as f:
             content = f.readlines()
+        display = ""
+        for line in content:
+            line = line.upper()
+            if "DISPLAY" in line:
+                line = line.split("=", 1)
+                display = line[1].upper().strip()
+        return display
     except Exception as e:
-        print(f"Error: {e}")
-    display = ""
-    for line in content:
-        line = line.upper()
-        if "DISPLAY" in line:
-            line = line.split("=")
-            display = line[1].upper().strip()
-    return display
+        return None
 
 
 def main() -> None:
@@ -50,17 +49,15 @@ def main() -> None:
     configuration file and starts the maze display.
     """
     if len(sys.argv) == 1:
-        print(1)
-        # renderer = MazeRenderer()
+        mlx_d = MlxRenderer()
     elif len(sys.argv) == 2:
         config_file: str = sys.argv[1]
         display = check_display(config_file)
-        if display == "MLX":
-            print("mlx")
-            # renderer = MazeRenderer(config_file)
-        else:
+        if display and display == "ASCII":
             ascii_d = AsciiRenderer(config_file)
             ascii_d.main()
+        else:
+            mlx_d = MlxRenderer(config_file)
 
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")

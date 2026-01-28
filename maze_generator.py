@@ -43,10 +43,10 @@ class MazeGenerator:
         self.seed: int | None = None
         self.perfect: bool = True
         self.entry: tuple = (0, 0)
-        self.exit: tuple = (19, 9)
+        self.exit: tuple = (self.cols - 1, self.rows - 1)
         self.output_file: str = "maze.txt"
         self.algorithm: str = "WILSON"
-        self.display: str = "ASCII"
+        self.display: str = "MLX"
 
         # Track which settings came from config file
         custom: List[str] = []
@@ -84,6 +84,7 @@ class MazeGenerator:
         """Print final settings of the maze."""
         print("\nMaze configuration:")
         config_items = {
+            "DISPLAY": self.display,
             "WIDTH": self.cols,
             "HEIGHT": self.rows,
             "ENTRY": self.entry,
@@ -91,8 +92,7 @@ class MazeGenerator:
             "SEED": self.seed,
             "PERFECT": self.perfect,
             "ALGORITHM": self.algorithm,
-            "OUTPUT_FILE": self.output_file,
-            "DISPLAY": self.display
+            "OUTPUT_FILE": self.output_file
         }
 
         for k, v in config_items.items():
@@ -176,14 +176,14 @@ class MazeGenerator:
                 elif k == "ALGORITHM":
                     if v.upper() not in ["DFS", "WILSON"]:
                         raise ValueError(
-                                "Invalid algorithm: pick DFS or WILSON"
+                                f'Invalid algorithm "{v}" pick DFS or WILSON'
                                 )
                     self.algorithm = v.upper()
                     custom.append(k)
                 elif k == "DISPLAY":
                     if v.upper() not in ["ASCII", "MLX"]:
                         raise ValueError(
-                                "Invalid display mode: pick ASCII or MLX"
+                                f'Invalid display "{v}" pick ASCII or MLX'
                                 )
                     self.display = v.upper()
                     custom.append(k)
@@ -194,7 +194,7 @@ class MazeGenerator:
                             "OUTPUT_FILE, PERFECT, SEED, ALGORITHM, DISPLAY"
                             )
             except Exception as e:
-                print(f'Error in {k}: {e}\nSwitching to default value')
+                print(f'Error in {k}: {e}\nSwitching to default {k.lower()}')
 
         return custom
 
