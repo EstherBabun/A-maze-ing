@@ -1,54 +1,70 @@
 #!/usr/bin/env python3
-# File: main.py
+# File: a_maze_ing.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
-# Created: 2026/01/15 18:33:22
-# Updated: 2026/01/21 22:21:15
-
-"""Docstring to write. Version Morgane"""
+# Created: 2026/01/22 09:44:42
+# Updated: 2026/01/28 09:44:42
 
 import sys
-from maze_generator import MazeGenerator
-from parser_maze import MazeParser
+# from maze_generator import MazeGenerator
 # from maze_renderer import MazeRenderer
+from ascii_renderer import AsciiRenderer
+
+"""
+Entry point of the A-Maze-Ing program.
+
+This module parses command-line arguments and launches the
+appropriate maze renderer based on the configuration file.
+"""
+
+
+def check_display(config_file: str) -> str:
+    """
+    Read the configuration file and extract the display mode.
+
+    Args:
+        config_file (str): Path to the configuration file.
+
+    Returns:
+        str: the whole string wrote by the user.
+    """
+    try:
+        with open(config_file, "r") as f:
+            content = f.readlines()
+    except Exception as e:
+        print(f"Error: {e}")
+    display = ""
+    for line in content:
+        line = line.upper()
+        if "DISPLAY" in line:
+            line = line.split("=")
+            display = line[1].upper().strip()
+    return display
 
 
 def main() -> None:
-    """Docstring to write."""
-    # check the arguments
+    """
+    Parse command-line arguments and launch the maze renderer.
+
+    This function selects the appropriate renderer based on the
+    configuration file and starts the maze display.
+    """
     if len(sys.argv) == 1:
-        # Init maze with default settings
-        my_maze: MazeGenerator = MazeGenerator()
+        print(1)
+        # renderer = MazeRenderer()
     elif len(sys.argv) == 2:
-        # take the path to the config file
         config_file: str = sys.argv[1]
-        # create maze instance
-        my_maze: MazeGenerator = MazeGenerator(config_file)
+        display = check_display(config_file)
+        if display == "MLX":
+            print("mlx")
+            # renderer = MazeRenderer(config_file)
+        else:
+            ascii_d = AsciiRenderer(config_file)
+            ascii_d.main()
+
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
         return
-
-    # generate maze passing "DFS" or "Wilson" as argument
-    my_maze.generate_maze()
-
-    parsing = MazeParser(my_maze.output_file, my_maze.rows, config_file)
-    parsing.display_ascii()
-
-    # Affichage avec MiniLibX
-    """ renderer = MazeRenderer(my_maze.output_file)
-
-    renderer.m.mlx_clear_window(renderer.ptr, renderer.win_ptr)
-    renderer.create_image()
-    # renderer.m.mlx_string_put(renderer.ptr, renderer.win_ptr,
-    # 20, 20, 255, lines[0])  # pour les commandes
-
-    stuff = [1, 2]
-    renderer.m.mlx_mouse_hook(renderer.win_ptr, renderer.mymouse, None)
-    renderer.m.mlx_key_hook(renderer.win_ptr, renderer.mykey, stuff)
-    renderer.m.mlx_hook(renderer.win_ptr, 33, 0, renderer.gere_close, None)
-
-    renderer.m.mlx_loop(renderer.ptr)
- """
 
 
 if __name__ == "__main__":

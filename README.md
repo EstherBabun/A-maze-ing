@@ -33,6 +33,11 @@ How it works:
 - The algorithm stops when the exit cell is reached or when all reachable cells have been explored.
 - The shortest path is then reconstructed by backtracking from the target cell to the start cell.
 
+## Affichage - Both
+### ASCII renderer - Implemented by Morgane
+### MinilibX renderer - Implemented by Esther
+
+
 # RESOURCES
 
 Article on Wilson's algo: https://medium.com/@batbat.senturk/the-ultimate-unbiased-maze-generation-technique-you-need-to-see-46123d5fec76
@@ -40,97 +45,3 @@ Page on github for maze generating and solving: https://github.com/batuSenturk/M
 
 keyboard key: https://www.cl.cam.ac.uk/~mgk25/ucs/keysymdef.h
 séquence de terminal visuel de console : https://learn.microsoft.com/fr-fr/windows/console/console-virtual-terminal-sequences
-
-Makefile : 
-make install      # crée le venv + installe les dépendances
-make run          # lance le programme
-make debug        # lance avec pdb
-make lint         # lint obligatoire
-make lint-strict  # lint strict (optionnel)
-make clean        # nettoyage
-make play		  # test affichage
-
-Braiding algorithm :
-- Generate perfect maze
-- search dead ends (3 walls)
-- Randomly knock down a wall at the back of a percentage of these dead ends
-
-
-1️⃣ \033 : la base de tout
-\033
-
-
-C’est :
-
-le caractère ESC (escape)
-
-code ASCII 27
-
-👉 Il dit au terminal :
-
-“attention, ce qui suit est une commande”
-
-2️⃣ [ : mode CSI
-ESC [
-
-
-Ça s’appelle CSI (Control Sequence Introducer).
-
-👉 Ça signifie :
-
-“je vais te donner une instruction avec des paramètres”
-
-5️⃣ La boucle infinie
-while True:
-    print("\033[H", end="")
-
-
-Là, c’est le cœur du truc.
-
-À chaque itération :
-
-tu remets le curseur en haut
-
-tu n’effaces pas l’écran
-
-tu écris par-dessus ce qui existe déjà
-
-👉 Résultat :
-
-le texte semble “se mettre à jour”
-
-mais en réalité, tu réécris toujours au même endroit
-
-6️⃣ Pourquoi end="" est crucial
-
-Par défaut, print() fait :
-
-texte\n
-
-
-Donc :
-
-le curseur descend à la ligne suivante
-
-Ici :
-
-print("\033[H", end="")
-
-
-👉 aucun saut de ligne, juste la commande.
-
-Ça fait :
-
-clear écran
-
-curseur en haut
-
-redraw complet
-
-Utilisé par :
-
-top
-
-htop
-
-watch
