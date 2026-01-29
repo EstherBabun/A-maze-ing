@@ -529,6 +529,7 @@ class MlxRenderer:
             self.delete_navigation_path()
         # q key
         elif keynum == 113:
+            print("Bye! Thanks for playing ~")
             self.gere_close(None)
 
     def gere_close(self, dummy):

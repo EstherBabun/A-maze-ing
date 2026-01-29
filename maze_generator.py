@@ -56,8 +56,8 @@ class MazeGenerator:
         self.entry: tuple = (0, 0)
         self.exit: tuple = (self.cols - 1, self.rows - 1)
         self.output_file: str = "maze.txt"
-        self.algorithm: str = "WILSON"
-        self.display: str = "MLX"
+        self.algorithm: str = "wilson"
+        self.display: str = "mlx"
 
         # Track which settings came from config file
         custom: List[str] = []
@@ -160,13 +160,13 @@ class MazeGenerator:
         for k, v in raw_config.items():
             try:
                 if k == "WIDTH":
-                    if int(v) < 0 or int(v) == 1:
-                        raise ValueError("width cannot be one or negative")
+                    if int(v) < 2:
+                        raise ValueError("width cannot be less than 2")
                     self.cols = int(v)
                     custom.append(k)
                 elif k == "HEIGHT":
-                    if int(v) < 0 or int(v) == 1:
-                        raise ValueError("height cannot be one or negative")
+                    if int(v) < 2:
+                        raise ValueError("height cannot be less than 2")
                     self.rows = int(v)
                     custom.append(k)
                 elif k == "ENTRY":
@@ -217,13 +217,16 @@ class MazeGenerator:
         return coord_tuple
 
     def _parse_boolean(self, value: str, key: str) -> bool:
-        """Parse a boolean string 'True' or 'False'."""
-        if value.upper() == "TRUE":
+        """Parse a boolean string into bool."""
+        val = value.lower()
+        if val in ('true', '1', 'yes'):
             return True
-        elif value.upper() == "FALSE":
+        elif val in ('false', '0', 'no'):
             return False
         else:
-            raise ValueError('boolean expects "True" or "False"')
+            raise ValueError(
+                f"{key} must be true/false, yes/no or 1/0"
+            )
 
     def _is_within_bounds(self, coord: tuple) -> bool:
         """Check if a coordinate is within maze bounds."""
@@ -336,8 +339,7 @@ class MazeGenerator:
         """
         x, y = cell.coord
         ox, oy = self.offset[direction]
-        nx, ny = x + ox, y + oy
-        return self.get_cell(nx, ny)
+        return self.get_cell(x + ox, y + oy)
 
     def set_visited(self, cell: Cell) -> None:
         """
@@ -587,9 +589,9 @@ class MazeGenerator:
         random.seed(self.seed)
 
         # select algo
-        if self.algorithm == "DFS":
+        if self.algorithm.upper() == "DFS":
             self._iter_DFS()
-        elif self.algorithm == "WILSON":
+        elif self.algorithm.upper() == "WILSON":
             self.wilson()
 
         if not self.perfect:
