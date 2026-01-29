@@ -17,7 +17,7 @@ class MazeGenerator:
     """A class for the maze attributes and methods.
 
     Attributes:
-    - Attributes define by the loaded config:
+    - Attributes defined by the loaded config:
         cols (int): define the width of the maze
         rows (int): define the height of the maze
         seed (int | None): the seed passed to random
@@ -44,6 +44,7 @@ class MazeGenerator:
             "E": (1, 0),
             "W": (-1, 0)
             }
+    opposite: Dict[str, str] = {"E": "W", "W": "E", "N": "S", "S": "N"}
 
     def __init__(self, config_file: str | None) -> None:
         """Initialise the attributes of the maze with the default config."""
@@ -74,7 +75,7 @@ class MazeGenerator:
 
         # create utils lists
         self.grid: List[List[Cell]] = [
-                [Cell(x, y, self) for x in range(self.cols)]
+                [Cell(x, y) for x in range(self.cols)]
                 for y in range(self.rows)
                 ]
         self.block_42_walls()
@@ -322,6 +323,61 @@ class MazeGenerator:
             return self.grid[y][x]
         return None
 
+    def get_neighbor(self, cell: Cell, direction: str) -> Cell | None:
+        """
+         Get the neighboring cell in the given direction.
+
+        Args:
+            dir (str): Direction to look for (N, S, E, or W).
+
+        Returns:
+            Cell | None: The neighboring cell if it exists,
+            otherwise None.
+        """
+        x, y = cell.coord
+        ox, oy = self.offset[direction]
+        nx, ny = x + ox, y + oy
+        return self.get_cell(nx, ny)
+
+    def set_visited(self, cell: Cell) -> None:
+        """
+        Mark the cell as visited and remove it from the unvisited list
+        """
+        cell.visited = True
+        self.unvisited.remove(cell)
+
+    def get_direction(self, cell: Cell, neighbor: Cell) -> str | None:
+        """
+        Determine the direction between cell and a neighboring cell.
+
+        Args:
+            cell (Cell): cell of reference
+            neighbor (Cell): Adjacent cell.
+
+        Returns:
+            str | None: Direction of the neighbor (N, S, E, or W),
+            or None if the cells are not adjacent.
+        """
+        x, y = cell.coord
+        nx, ny = neighbor.coord
+        offset: Tuple[int, int] = (nx - x, ny - y)
+        for k, v in self.offset.items():
+            if v == offset:
+                return k
+        return None
+
+    def set_walls(self, cell: Cell, direction: str) -> None:
+        """
+        Remove the wall between this cell and its neighbor in a direction.
+
+        Args:
+            dir (str): Direction of the neighbor cell (N, S, E, or W)
+        """
+        neighbor = self.get_neighbor(cell, direction)
+        if neighbor:
+            cell.walls[direction] = 0
+            neighbor.walls[self.opposite[direction]] = 0
+
     def get_42_cells(self, w: int, h: int) -> List[tuple]:
         """Calculate the coordinates of the 42 cells."""
         if w < 11 or h < 9:
@@ -342,8 +398,7 @@ class MazeGenerator:
                 (cx + 2, cy + 2), (cx + 3, cy + 2)
                 ]
 
-        ft_walls = four_walls + two_walls
-        return ft_walls
+        return four_walls + two_walls
 
     def block_42_walls(self) -> None:
         """Prevent access to the 42 walls in the center of the maze."""
@@ -354,7 +409,7 @@ class MazeGenerator:
         """Return all allowed neighbored cells without the 42 block cells."""
         neighbors: List[Cell] = []
         x, y = cell.coord
-        for direction, (ox, oy) in cell.OFFSET.items():
+        for direction, (ox, oy) in self.offset.items():
             neighbor: Cell | None = self.get_cell(x + ox, y + oy)
             if neighbor and not neighbor._is_42:
                 neighbors.append(neighbor)
@@ -364,52 +419,52 @@ class MazeGenerator:
         """Generate an uniform random maze using Wilson's algorithm."""
         # Premier îlot du labyrinthe
         if self.entry_cell:
-            self.entry_cell.set_visited()
+            self.set_visited(self.entry_cell)
 
         # walk until every cell is visited
         while self.unvisited:
             random_cell = random.choice(self.unvisited)
-            for cell, dir in self.walk(random_cell):
-                cell.set_visited()
-                cell.set_walls(dir)
+            for cell, direction in self.walk(random_cell):
+                self.set_visited(cell)
+                self.set_walls(cell, direction)
 
     def walk(self, start_cell: Cell) -> List[tuple[Cell, str]]:
         """Walk until finding a path of unvisited cell without looping."""
         cell_visited: Dict = {}
         draft_path: List = []
         walking: bool = True
-        curr_cell: Cell = start_cell
+        current: Cell = start_cell
 
         while walking:
             # random choice in neighbors cells
-            next: Cell = random.choice(self.get_neighbors_cells(curr_cell))
-            direction: str = curr_cell.get_direction(next)
-            cell_visited[curr_cell] = direction
-            if next.visited:
+            neighbor: Cell = random.choice(self.get_neighbors_cells(current))
+            direction: str = self.get_direction(current, neighbor)
+            cell_visited[current] = direction
+            if neighbor.visited:
                 break
 
             # Loop detection
-            if next in draft_path:
-                loop_start_idx: int = draft_path.index(next)
+            if neighbor in draft_path:
+                loop_start_idx: int = draft_path.index(neighbor)
                 draft_path = draft_path[:loop_start_idx + 1]
             else:
-                draft_path.append(next)
-            curr_cell = next
+                draft_path.append(neighbor)
+            current = neighbor
 
         # final way reconstruction
         path = []
-        curr_cell = start_cell
-        while curr_cell in cell_visited:
-            direction = cell_visited[curr_cell]
-            path.append((curr_cell, direction))
-            curr_cell = curr_cell.get_neighbor(direction)
+        current = start_cell
+        while current in cell_visited:
+            direction = cell_visited[current]
+            path.append((current, direction))
+            current = self.get_neighbor(current, direction)
         return path
 
     def _iter_DFS(self) -> None:
         """Apply iterative DFS algo."""
         stack: List[Cell] = []
         current: Cell = self.entry_cell
-        current.set_visited()
+        self.set_visited(current)
 
         while self.unvisited:
             neighbors = self.get_neighbors_cells(current)
@@ -417,11 +472,11 @@ class MazeGenerator:
                                    if cell in self.unvisited]
             if unvisited_neighbors:
                 neighbor = random.choice(unvisited_neighbors)
-                direction = current.get_direction(neighbor)
-                current.set_walls(direction)
+                direction = self.get_direction(current, neighbor)
+                self.set_walls(current, direction)
                 stack.append(current)
                 current = neighbor
-                current.set_visited()
+                self.set_visited(current)
             else:
                 if stack:
                     current = stack.pop()
@@ -433,7 +488,7 @@ class MazeGenerator:
         neighbors: List[Cell] = self.get_neighbors_cells(cell)
         walled: List[tuple] = []
         for neighbor in neighbors:
-            direction = cell.get_direction(neighbor)
+            direction = self.get_direction(cell, neighbor)
             if cell.walls[direction] == 1:
                 walled.append((direction, neighbor))
         return walled
@@ -465,9 +520,9 @@ class MazeGenerator:
                 break
             for direction, binary in cell.walls.items():
                 if binary == 0:
-                    neighbor = cell.get_neighbor(cell.OPPOSITE[direction])
+                    neighbor = self.get_neighbor(cell, self.opposite[direction])
                     if neighbor and not neighbor._is_42:
-                        cell.set_walls(cell.OPPOSITE[direction])
+                        self.set_walls(cell, self.opposite[direction])
                         removed += 1
                         break
 
@@ -477,9 +532,9 @@ class MazeGenerator:
                     break
                 for direction, binary in cell.walls.items():
                     if binary == 0:
-                        neighbor = cell.get_neighbor(cell.OPPOSITE[direction])
+                        neighbor = self.get_neighbor(cell, self.opposite[direction])
                         if neighbor and not neighbor._is_42:
-                            cell.set_walls(cell.OPPOSITE[direction])
+                            self.set_walls(cell, self.opposite[direction])
                             removed += 1
                             break
 
@@ -504,7 +559,7 @@ class MazeGenerator:
                 return parent
             for direction, binary in current.walls.items():
                 if binary == 0:
-                    neighbor = current.get_neighbor(direction)
+                    neighbor = self.get_neighbor(current, direction)
                     if neighbor not in visited:
                         visited.add(neighbor)
                         queue.append(neighbor)
@@ -517,11 +572,11 @@ class MazeGenerator:
 
         # store path starting from exit
         while current is not None:
-            next = parent[current]
-            if not next:
+            neighbor = parent[current]
+            if not neighbor:
                 break
-            path += next.get_direction(current)
-            current = next
+            path += self.get_direction(neighbor, current)
+            current = neighbor
 
         # set path attribute reversing stored path
         self.path = path[::-1]

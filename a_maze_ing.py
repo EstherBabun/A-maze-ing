@@ -60,7 +60,6 @@ def main() -> None:
         else:
             mlx_d = MlxRenderer(config_file)
             mlx_d.display()
-
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
         return

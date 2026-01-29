@@ -7,13 +7,10 @@
 
 """Module to render a maze with mlx graphics library."""
 
-from __future__ import annotations
 from maze_generator import MazeGenerator
 from mlx import Mlx
-from typing import List, Tuple, Dict, Optional, TYPE_CHECKING
+from typing import List, Tuple, Dict, Optional
 from ctypes import c_void_p, POINTER, c_char
-if TYPE_CHECKING:
-    from cell import Cell
 
 
 class MlxRenderer:
@@ -450,7 +447,7 @@ class MlxRenderer:
     def navigate(self, direction) -> None:
         """Navigate in the maze, coloring cell in given direction."""
         current = self.current_cell
-        next_cell = current.get_neighbor(direction)
+        next_cell = self.maze_gen.get_neighbor(current, direction)
         if next_cell is not None and current.walls[direction] == 0:
             x, y = next_cell.coord
             if next_cell.coord == self.exit:
