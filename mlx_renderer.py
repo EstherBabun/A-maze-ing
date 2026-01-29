@@ -133,8 +133,11 @@ class MlxRenderer:
         # create a maze
         self.create_maze(config)
 
-        # create configure and launch renderer
+        # create and configure renderer
         self.configure_renderer()
+
+        # execute rendering operations
+        self.display()
 
     def convert_soluce_path(self, path) -> None:
         """Convert directions to coordinates."""
@@ -147,19 +150,22 @@ class MlxRenderer:
             x, y = next_coord
         self.soluce_path = soluce_path[:-1]
 
-    def create_maze(self, config: str) -> None:
+    def create_maze(self, config: str) -> bool:
         """Create maze instance and initialize maze data."""
         self.config_file = config
         maze_gen = MazeGenerator(config)
         self.maze_gen = maze_gen
-        # generate maze
-        maze_gen.generate_maze()
         # store maze data
         self.maze_w = maze_gen.cols
         self.maze_h = maze_gen.rows
         self.grid = maze_gen.grid
         self.entry = maze_gen.entry
         self.exit = maze_gen.exit
+
+        # generate maze
+        maze_gen.generate_maze()
+
+        # store maze extra data
         self.convert_soluce_path(maze_gen.path)
         self.solution: bool = False
         self.current_cell = maze_gen.entry_cell

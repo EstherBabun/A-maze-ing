@@ -1,6 +1,4 @@
-Width=42
-height=22
-EXIT=40,12
-Perfect=N
-display=MLX
-algorithm=dfs
+width=15
+display=ASCii
+algorithm=DFS
+output_file=kjshfkwhefh

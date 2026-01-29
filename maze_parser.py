@@ -34,7 +34,11 @@ class MazeParser:
         display (str): Display mode (ASCII or MLX)
     """
 
-    def __init__(self, config_file: Optional[str] = None) -> None:
+    def __init__(
+            self,
+            config_file: Optional[str] = None,
+            silenced: Optional[bool] = True
+            ) -> None:
         """
         Initialize the parser with default values.
 
@@ -42,6 +46,9 @@ class MazeParser:
             config_file (str | None): Path to configuration file,
                                      or None for defaults
         """
+        # set boolean to silence output
+        self.silenced: bool = silenced
+
         # Set defaults first (exactly like original MazeGenerator)
         self.cols: int = 20
         self.rows: int = 10
@@ -51,15 +58,16 @@ class MazeParser:
         self.exit: Tuple[int, int] = (self.cols - 1, self.rows - 1)
         self.output_file: str = "maze.txt"
         self.algorithm: str = "wilson"
-        self.display: str = "mlx"
+        self.display: str = "ascii"
 
         # Track which settings came from config file
         self._custom_keys: List[str] = []
+        # Track if there was a file error
+        self._config_loaded = False
 
         # Load config file if provided
         if config_file is not None:
             self._load_config(config_file)
-        # Note: print_config() will be called by MazeGenerator after validation
 
     def _load_config(self, config_file: str) -> None:
         """
@@ -71,10 +79,12 @@ class MazeParser:
         raw_config = self._read_config_file(config_file)
         if raw_config is not None:
             self._custom_keys = self._parse_config_values(raw_config)
+            self._config_loaded = True
             
             # Adjust default exit if WIDTH/HEIGHT changed but EXIT wasn't specified
-            if ("WIDTH" in self._custom_keys or "HEIGHT" in self._custom_keys) and \
-               "EXIT" not in self._custom_keys:
+            if (("WIDTH" in self._custom_keys
+                or "HEIGHT" in self._custom_keys)
+                    and "EXIT" not in self._custom_keys):
                 self.exit = (self.cols - 1, self.rows - 1)
 
     def _read_config_file(self, file: str) -> Optional[Dict[str, str]]:
@@ -91,9 +101,12 @@ class MazeParser:
             with open(file, "r") as f:
                 content: str = f.read()
                 if content == '':
-                    print("Config file is empty")
+                    if not self.silenced:
+                        print("Config file is empty")
                     return None
 
+                if not self.silenced:
+                    print(f"Loading settings from config file {file}...")
                 raw_config: Dict[str, str] = {}
 
                 for line in content.splitlines():
@@ -104,20 +117,23 @@ class MazeParser:
                             key = key.strip().upper()
                             raw_config[key] = value.strip()
                     except ValueError:
-                        print(
-                            f'Error in line {line} - '
-                            f'Expected syntax: "KEY=value"'
-                        )
+                        if not self.silenced:
+                            print(
+                                    f'Error in line {line} - '
+                                    f'Expected syntax: "KEY=value"'
+                                    )
                         continue
             if not len(raw_config.keys()):
                 raise ValueError(f"No valid settings in {file}")
             return raw_config
 
         except (FileNotFoundError, PermissionError) as e:
-            print(f"Error: {e}")
+            if not self.silenced:
+                print(f"Error: {e}")
             return None
         except Exception as e:
-            print(f"Error: {e}")
+            if not self.silenced:
+                print(f"Error: {e}")
             return None
 
     def _parse_config_values(self, raw_config: Dict[str, str]) -> List[str]:
@@ -157,6 +173,12 @@ class MazeParser:
                     self.seed = int(v)
                     custom.append(k)
                 elif k == "OUTPUT_FILE":
+                    if not v.endswith('.txt'):
+                        v = v + '.txt'
+                    with open(v, "w") as f:
+                        f.write("testing...")
+                    if not self.silenced:
+                        print(f"Info: Added .txt extension to output file: {v}")
                     self.output_file = v
                     custom.append(k)
                 elif k == "ALGORITHM":
@@ -164,23 +186,25 @@ class MazeParser:
                         raise ValueError(
                             f'Invalid algorithm "{v}" pick DFS or WILSON'
                         )
-                    self.algorithm = v.upper()
+                    self.algorithm = v.lower()
                     custom.append(k)
                 elif k == "DISPLAY":
                     if v.upper() not in ["ASCII", "MLX"]:
                         raise ValueError(
                             f'Invalid display "{v}" pick ASCII or MLX'
                         )
-                    self.display = v.upper()
+                    self.display = v.lower()
                     custom.append(k)
                 else:
-                    print(
-                        f"Error: Invalid keyword {k} - "
-                        "Allowed: WIDTH, HEIGHT, ENTRY, EXIT, "
-                        "OUTPUT_FILE, PERFECT, SEED, ALGORITHM, DISPLAY"
-                    )
+                    if not self.silenced:
+                        print(
+                                f"Error: Invalid keyword {k} - "
+                                "Allowed: WIDTH, HEIGHT, ENTRY, EXIT, "
+                                "OUTPUT_FILE, PERFECT, SEED, ALGORITHM, DISPLAY"
+                                )
             except Exception as e:
-                print(f'Error in {k}: {e}\nSwitching to default {k.lower()}')
+                if not self.silenced:
+                    print(f'Error in {k}: {e}\nSwitching to default {k.lower()}')
 
         return custom
 
@@ -227,26 +251,4 @@ class MazeParser:
                 f'Invalid boolean value "{value}" - '
                 'use True/False, 1/0, Yes/No, or Y/N'
             )
-
-    def print_config(self) -> None:
-        """Print the final maze configuration."""
-        print("\nMaze configuration:")
-        config_items = {
-            "WIDTH": self.cols,
-            "HEIGHT": self.rows,
-            "ENTRY": self.entry,
-            "EXIT": self.exit,
-            "SEED": self.seed,
-            "PERFECT": self.perfect,
-            "ALGORITHM": self.algorithm,
-            "OUTPUT_FILE": self.output_file,
-            "DISPLAY": self.display
-        }
-
-        for k, v in config_items.items():
-            if k in self._custom_keys:
-                print(f"  {k}: {v}")
-            else:
-                print(f"  {k}: {v} (default)")
-        print()
 

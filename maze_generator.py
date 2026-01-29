@@ -73,6 +73,13 @@ class MazeGenerator:
         self.algorithm: str = parser.algorithm
         self.display: str = parser.display
 
+        # check against huge maze generation
+        # if self.display.upper() == "MLX": 
+        #     if self.cols >= 400 or self.rows >= 400:
+        #         print("Maze is waaay too big for mlx rendering.")
+        #         print("Aborting mission!")
+        #         return
+
         # Initialize remaining attributes
         self.tot_size: int = self.cols * self.rows
         self.path: str = ""
@@ -114,8 +121,8 @@ class MazeGenerator:
         """
         if self._config_file is None:
             print("No config file, switching to default settings.")
-        else:
-            print(f"Loading settings from config file {self._config_file}...")
+        elif not self._parser._config_loaded:
+            print("Switching to default settings")
 
         print("\nMaze configuration:")
         config_items = {
@@ -136,6 +143,14 @@ class MazeGenerator:
             else:
                 print(f"  {k}: {v} (default)")
         print()
+
+        if self.cols > 120 or self.rows > 60:
+            print("Warning: Maze is quite large.")
+            print("Consider generating a smaller maze")
+            print("for faster rendering and better visibility")
+            print("Recommended maze size: 120x60\n")
+
+            print("Rendering...")
 
     def _is_within_bounds(self, coord: tuple) -> bool:
         """Check if a coordinate is within maze bounds."""
@@ -470,9 +485,9 @@ class MazeGenerator:
         random.seed(self.seed)
 
         # select algo
-        if self.algorithm.upper() == "DFS":
+        if self.algorithm == "dfs":
             self._iter_DFS()
-        elif self.algorithm.upper() == "WILSON":
+        else:
             self.wilson()
 
         if not self.perfect:

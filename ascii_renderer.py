@@ -5,6 +5,7 @@
 # Created: 2026/01/23 16:09:10
 # Updated: 2026/01/28 16:09:10
 
+from typing import Optional
 from maze_generator import MazeGenerator
 
 
@@ -13,7 +14,7 @@ class AsciiRenderer:
     Render a maze in the terminal using ASCII characters.
     """
 
-    def __init__(self, config: str) -> None:
+    def __init__(self, config: Optional[str] = None) -> None:
         """
         Initialize the ASCII renderer.
 
@@ -28,6 +29,8 @@ class AsciiRenderer:
         self.entry: tuple = ()
         self.exit: tuple = ()
         self.path: str = ""
+
+        self.main()
 
     @staticmethod
     def show_menu() -> None:
