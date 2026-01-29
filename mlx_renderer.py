@@ -246,12 +246,6 @@ class MlxRenderer:
         if self.window_w < 240:
             self.window_w = 240
 
-        # Warning against oversized window
-        if self.window_h >= self.screen_h or self.window_w >= self.screen_w:
-            print("Warning: Maze is too large!")
-            print("Consider generating a smaller maze for better visibility")
-            print("Recommended maze size: 120x60\n")
-
     def configure_renderer(self) -> None:
         """Configure renderer attributes based on maze data."""
         self.set_cell_size_and_wall_thickness()

@@ -144,13 +144,18 @@ class MazeGenerator:
                 print(f"  {k}: {v} (default)")
         print()
 
-        if self.cols > 120 or self.rows > 60:
-            print("Warning: Maze is quite large.")
+        # print max size warning messages
+        if not self._parser.is_displayable:
+            print("Warning: Maze is waaaay too large - Aborting rendering!")
+            print("Maximum size for rendering: 320x150\n")
+            print(f"Encoding maze in {self.output_file}... (be patient!)")
+
+        elif self.cols > 120 or self.rows > 60:
+            print("Warning: Maze is quite large")
             print("Consider generating a smaller maze")
             print("for faster rendering and better visibility")
-            print("Recommended maze size: 120x60\n")
-
-            print("Rendering...")
+            print("Recommended size for big mazes: 120x60\n")
+            print("Rendering... (this might take a few minutes)")
 
     def _is_within_bounds(self, coord: tuple) -> bool:
         """Check if a coordinate is within maze bounds."""

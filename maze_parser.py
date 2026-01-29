@@ -37,7 +37,7 @@ class MazeParser:
     def __init__(
             self,
             config_file: Optional[str] = None,
-            silenced: Optional[bool] = True
+            quiet: Optional[bool] = True
             ) -> None:
         """
         Initialize the parser with default values.
@@ -47,7 +47,7 @@ class MazeParser:
                                      or None for defaults
         """
         # set boolean to silence output
-        self.silenced: bool = silenced
+        self.quiet: bool = quiet
 
         # Set defaults first (exactly like original MazeGenerator)
         self.cols: int = 20
@@ -58,7 +58,7 @@ class MazeParser:
         self.exit: Tuple[int, int] = (self.cols - 1, self.rows - 1)
         self.output_file: str = "maze.txt"
         self.algorithm: str = "wilson"
-        self.display: str = "ascii"
+        self.display: str = "mlx"
 
         # Track which settings came from config file
         self._custom_keys: List[str] = []
@@ -101,11 +101,11 @@ class MazeParser:
             with open(file, "r") as f:
                 content: str = f.read()
                 if content == '':
-                    if not self.silenced:
+                    if not self.quiet:
                         print("Config file is empty")
                     return None
 
-                if not self.silenced:
+                if not self.quiet:
                     print(f"Loading settings from config file {file}...")
                 raw_config: Dict[str, str] = {}
 
@@ -117,7 +117,7 @@ class MazeParser:
                             key = key.strip().upper()
                             raw_config[key] = value.strip()
                     except ValueError:
-                        if not self.silenced:
+                        if not self.quiet:
                             print(
                                     f'Error in line {line} - '
                                     f'Expected syntax: "KEY=value"'
@@ -128,11 +128,11 @@ class MazeParser:
             return raw_config
 
         except (FileNotFoundError, PermissionError) as e:
-            if not self.silenced:
+            if not self.quiet:
                 print(f"Error: {e}")
             return None
         except Exception as e:
-            if not self.silenced:
+            if not self.quiet:
                 print(f"Error: {e}")
             return None
 
@@ -177,7 +177,7 @@ class MazeParser:
                         v = v + '.txt'
                     with open(v, "w") as f:
                         f.write("testing...")
-                    if not self.silenced:
+                    if not self.quiet:
                         print(f"Info: Added .txt extension to output file: {v}")
                     self.output_file = v
                     custom.append(k)
@@ -196,14 +196,14 @@ class MazeParser:
                     self.display = v.lower()
                     custom.append(k)
                 else:
-                    if not self.silenced:
+                    if not self.quiet:
                         print(
                                 f"Error: Invalid keyword {k} - "
                                 "Allowed: WIDTH, HEIGHT, ENTRY, EXIT, "
                                 "OUTPUT_FILE, PERFECT, SEED, ALGORITHM, DISPLAY"
                                 )
             except Exception as e:
-                if not self.silenced:
+                if not self.quiet:
                     print(f'Error in {k}: {e}\nSwitching to default {k.lower()}')
 
         return custom
@@ -251,4 +251,14 @@ class MazeParser:
                 f'Invalid boolean value "{value}" - '
                 'use True/False, 1/0, Yes/No, or Y/N'
             )
+
+    @property
+    def is_displayable(self) -> bool:
+        """
+        Check if maze dimensions are compatible with rendering.
+        
+        Returns:
+            bool: True if dimensions are safe, False otherwise
+        """
+        return self.cols <= 320 and self.rows <= 150
 

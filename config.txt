@@ -1,4 +1,4 @@
-width=15
-display=ASCii
+width=2i
+height=10
 algorithm=DFS
-output_file=kjshfkwhefh
+perfect=false

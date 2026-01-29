@@ -27,7 +27,7 @@ def main() -> None:
     """
     # if no config file:
     if len(sys.argv) == 1:
-        ascii_d = AsciiRenderer()
+        mlx_d = MlxRenderer()
 
     # if config file:
     elif len(sys.argv) == 2:
@@ -36,11 +36,21 @@ def main() -> None:
         # instanciate parser
         parser: MazeParser = MazeParser(config_file, False)
 
-        # lauch selected display mode
-        if parser.display == "MLX":
-            mlx_d = MlxRenderer(config_file)
+        # check if maze size can be rendered
+        if parser.is_displayable:
+
+            # launch selected display mode
+            if parser.display == "ascii":
+                ascii_d = AsciiRenderer(config_file)
+            else:
+                mlx_d = MlxRenderer(config_file)
+
+        # Generate maze without display
         else:
-            ascii_d = AsciiRenderer(config_file)
+            from maze_generator import MazeGenerator
+            maze = MazeGenerator(config_file)
+            maze.generate_maze()
+            return
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
         return
