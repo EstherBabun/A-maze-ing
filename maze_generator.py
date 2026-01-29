@@ -7,10 +7,11 @@
 
 """A module to parse a config file, generate a maze and solve it."""
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 import random
 from collections import deque
 from cell import Cell
+from maze_parser import MazeParser
 
 
 class MazeGenerator:
@@ -46,28 +47,31 @@ class MazeGenerator:
             }
     opposite: Dict[str, str] = {"E": "W", "W": "E", "N": "S", "S": "N"}
 
-    def __init__(self, config_file: str | None) -> None:
-        """Initialise the attributes of the maze with the default config."""
-        # Set defaults first
-        self.cols: int = 20
-        self.rows: int = 10
-        self.seed: int | None = None
-        self.perfect: bool = True
-        self.entry: tuple = (0, 0)
-        self.exit: tuple = (self.cols - 1, self.rows - 1)
-        self.output_file: str = "maze.txt"
-        self.algorithm: str = "wilson"
-        self.display: str = "mlx"
+    def __init__(self, config_file: Optional[str] = None) -> None:
+        """
+        Initialise the maze generator with configuration.
 
-        # Track which settings came from config file
-        custom: List[str] = []
+        Args:
+            config_file (str | None): Path to configuration file,
+                                     or None for defaults
+        """
+        # Parse configuration using MazeParser
+        parser = MazeParser(config_file)
 
-        # Load config file if provided
-        if config_file is not None:
-            custom = self.load_config(config_file)
-        else:
-            print("No config file, switching to default settings.")
-            self.print_config(custom)
+        # Store parser for later use (to print final config)
+        self._parser = parser
+        self._config_file = config_file
+
+        # Set configuration attributes directly from parser
+        self.cols: int = parser.cols
+        self.rows: int = parser.rows
+        self.seed: Optional[int] = parser.seed
+        self.perfect: bool = parser.perfect
+        self.entry: tuple = parser.entry
+        self.exit: tuple = parser.exit
+        self.output_file: str = parser.output_file
+        self.algorithm: str = parser.algorithm
+        self.display: str = parser.display
 
         # Initialize remaining attributes
         self.tot_size: int = self.cols * self.rows
@@ -80,6 +84,16 @@ class MazeGenerator:
                 ]
         self.block_42_walls()
 
+        # Validate entry/exit points against maze structure
+        self._validate_entry_exit()
+
+        # Error message for "42" pattern if maze too small
+        if self.cols < 11 or self.rows < 9:
+            print("Warning: Maze too small for '42' pattern")
+
+        # print the final, validated configuration
+        self._print_final_config()
+
         self.unvisited: List[Cell] = [
             cell for row in self.grid
             for cell in row if not cell._is_42
@@ -91,8 +105,18 @@ class MazeGenerator:
         self.entry_cell: Cell | None = self.get_cell(*self.entry)
         self.exit_cell: Cell | None = self.get_cell(*self.exit)
 
-    def print_config(self, custom: List[str]) -> None:
-        """Print final settings of the maze."""
+    def _print_final_config(self) -> None:
+        """
+        Print the final validated configuration.
+
+        This is called AFTER entry/exit validation to ensure the printed
+        values reflect the actual configuration that will be used.
+        """
+        if self._config_file is None:
+            print("No config file, switching to default settings.")
+        else:
+            print(f"Loading settings from config file {self._config_file}...")
+
         print("\nMaze configuration:")
         config_items = {
             "WIDTH": self.cols,
@@ -107,126 +131,11 @@ class MazeGenerator:
         }
 
         for k, v in config_items.items():
-            if k in custom:
+            if k in self._parser._custom_keys:
                 print(f"  {k}: {v}")
             else:
                 print(f"  {k}: {v} (default)")
         print()
-
-    def _read_config_file(self, file: str) -> Dict[str, str] | None:
-        """Read config file and return raw dict or None on error."""
-        try:
-            with open(file, "r") as f:
-                content: str = f.read()
-                if content == '':
-                    print("Config file is empty")
-                    return None
-
-                print(f"Loading settings from config file {file}...")
-                raw_config: Dict[str, str] = {}
-
-                for line in content.splitlines():
-                    try:
-                        line = line.strip()
-                        if line and not line.startswith('#'):
-                            key, value = line.split('=', 1)
-                            key = key.strip().upper()
-                            raw_config[key] = value.strip()
-                    except ValueError:
-                        print(
-                                f'Error in line {line} - '
-                                f'Expected syntax: "KEY=value"'
-                                )
-                        continue
-            if not len(raw_config.keys()):
-                raise ValueError(f"No valid settings in {file}")
-            return raw_config
-
-        except (FileNotFoundError, PermissionError) as e:
-            print(f"Error: {e}")
-            return None
-        except Exception as e:
-            print(f"Error: {e}")
-            return None
-
-    def _parse_config_values(self, raw_config: Dict[str, str]) -> List[str]:
-        """
-        Parse and validate each config value.
-
-        Return: list of successfully parsed keys.
-        """
-        custom: List[str] = []
-
-        for k, v in raw_config.items():
-            try:
-                if k == "WIDTH":
-                    if int(v) < 2:
-                        raise ValueError("width cannot be less than 2")
-                    self.cols = int(v)
-                    custom.append(k)
-                elif k == "HEIGHT":
-                    if int(v) < 2:
-                        raise ValueError("height cannot be less than 2")
-                    self.rows = int(v)
-                    custom.append(k)
-                elif k == "ENTRY":
-                    self.entry = self._parse_coordinate(v, k)
-                    custom.append(k)
-                elif k == "EXIT":
-                    self.exit = self._parse_coordinate(v, k)
-                    custom.append(k)
-                elif k == "PERFECT":
-                    self.perfect = self._parse_boolean(v, k)
-                    custom.append(k)
-                elif k == "SEED":
-                    self.seed = int(v)
-                    custom.append(k)
-                elif k == "OUTPUT_FILE":
-                    self.output_file = v
-                    custom.append(k)
-                elif k == "ALGORITHM":
-                    if v.upper() not in ["DFS", "WILSON"]:
-                        raise ValueError(
-                                f'Invalid algorithm "{v}" pick DFS or WILSON'
-                                )
-                    self.algorithm = v.upper()
-                    custom.append(k)
-                elif k == "DISPLAY":
-                    if v.upper() not in ["ASCII", "MLX"]:
-                        raise ValueError(
-                                f'Invalid display "{v}" pick ASCII or MLX'
-                                )
-                    self.display = v.upper()
-                    custom.append(k)
-                else:
-                    print(
-                            f"Error: Invalid keyword {k} - "
-                            "Allowed: WIDTH, HEIGHT, ENTRY, EXIT"
-                            "OUTPUT_FILE, PERFECT, SEED, ALGORITHM, DISPLAY"
-                            )
-            except Exception as e:
-                print(f'Error in {k}: {e}\nSwitching to default {k.lower()}')
-
-        return custom
-
-    def _parse_coordinate(self, value: str, key: str) -> tuple:
-        """Parse a coordinate string 'x,y' into a tuple."""
-        coord_tuple = tuple(int(i.strip()) for i in value.split(','))
-        if len(coord_tuple) != 2:
-            raise ValueError('coordinates expect 2 values "x,y"')
-        return coord_tuple
-
-    def _parse_boolean(self, value: str, key: str) -> bool:
-        """Parse a boolean string into bool."""
-        val = value.lower()
-        if val in ('true', '1', 'yes'):
-            return True
-        elif val in ('false', '0', 'no'):
-            return False
-        else:
-            raise ValueError(
-                f"{key} must be true/false, yes/no or 1/0"
-            )
 
     def _is_within_bounds(self, coord: tuple) -> bool:
         """Check if a coordinate is within maze bounds."""
@@ -235,34 +144,34 @@ class MazeGenerator:
             return True
         return False
 
-    def reset_default_extry(self, point_type: str, custom: List[str]) -> None:
-        """Reset entry or exit to default value and remove from custom list."""
+    def reset_default_entry_exit(self, point_type: str) -> None:
+        """Reset entry or exit to default value and remove from custom keys."""
         if point_type == "ENTRY":
             self.entry = (0, 0)
+            # Remove from custom keys since we're resetting to default
+            if "ENTRY" in self._parser._custom_keys:
+                self._parser._custom_keys.remove("ENTRY")
         elif point_type == "EXIT":
             self.exit = (self.cols - 1, self.rows - 1)
-        if point_type in custom:
-            custom.remove(point_type)
+            # Remove from custom keys since we're resetting to default
+            if "EXIT" in self._parser._custom_keys:
+                self._parser._custom_keys.remove("EXIT")
 
-    def _validate_entry_exit(self, custom: List[str]) -> None:
+    def _validate_entry_exit(self) -> None:
         """Validate entry/exit by checking maze bounds and 42 cells."""
-        # Adjust exit defaults if WIDTH/HEIGHT changed
-        if "EXIT" not in custom and ("WIDTH" in custom or "HEIGHT" in custom):
-            self.exit = (self.cols - 1, self.rows - 1)
-
         # Check if entry/exit coordinates are within maze bounds
         if not self._is_within_bounds(self.entry):
             print(
                 "Error: Entry point exceeds borders of the maze.\n"
                 'Switching to default entry'
             )
-            self.reset_default_extry("ENTRY", custom)
+            self.reset_default_entry_exit("ENTRY")
         if not self._is_within_bounds(self.exit):
             print(
                 "Error: Exit point exceeds borders of the maze.\n"
                 'Switching to default exit'
             )
-            self.reset_default_extry("EXIT", custom)
+            self.reset_default_entry_exit("EXIT")
 
         # Check if entry/exit coordinates conflict with 42 blocked cells
         ft_walls: List[tuple] = self.get_42_cells(self.cols, self.rows)
@@ -271,13 +180,13 @@ class MazeGenerator:
                     "Error: Entry point is stuck in the 42 pattern\n"
                     "Switching to default entry"
                     )
-            self.reset_default_extry("ENTRY", custom)
+            self.reset_default_entry_exit("ENTRY")
         if self.exit in ft_walls:
             print(
                     "Error: Exit point is stuck in the 42 pattern\n"
                     "Switching to default exit"
                     )
-            self.reset_default_extry("EXIT", custom)
+            self.reset_default_entry_exit("EXIT")
 
         if self.entry == self.exit:
             print(
@@ -285,40 +194,12 @@ class MazeGenerator:
                     "the same coordinates"
                     )
             if self.entry != (0, 0):
-                self.reset_default_extry("ENTRY", custom)
+                self.reset_default_entry_exit("ENTRY")
                 print("Switching to default entry")
             if self.entry == self.exit:
-                self.reset_default_extry("EXIT", custom)
+                self.reset_default_entry_exit("EXIT")
                 print("Switching to default exit")
 
-    def load_config(self, file: str) -> List[str]:
-        """
-        Parse the config file and update maze attributes.
-
-        Return: list of custom keys.
-        """
-        custom: List[str] = []
-        raw_config: Dict[str, str] | None = {}
-
-        # Read and parse the config file
-        raw_config = self._read_config_file(file)
-        if raw_config is None:
-            print("Switching to default settings")
-            self.print_config(custom)
-            return custom
-
-        # Parse each configuration value
-        custom = self._parse_config_values(raw_config)
-
-        # Validate and adjust entry/exit points
-        self._validate_entry_exit(custom)
-
-        # Error message for "42" pattern if maze too small
-        if self.cols < 11 or self.rows < 9:
-            print("Warning: Maze too small for “42” pattern")
-
-        self.print_config(custom)
-        return custom
 
     def get_cell(self, x: int, y: int) -> Cell | None:
         """Get cell at (x, y), return None if out of borders."""
