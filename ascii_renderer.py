@@ -5,7 +5,6 @@
 # Created: 2026/01/23 16:09:10
 # Updated: 2026/01/28 16:09:10
 
-from typing import Optional
 from maze_generator import MazeGenerator
 
 
@@ -22,14 +21,8 @@ class AsciiRenderer:
             config (str): Name of the configuration file.
         """
         maze.generate_maze()
-        self.config = maze._config_file
-        self.name = maze.output_file
-        self.maze_height = maze.rows
-        self.maze_width = maze.cols
-        self.maze = maze.hex_repr
-        self.entry = maze.entry
-        self.exit = maze.exit
-        self.path = maze.path
+        self.maze = maze
+        self.maze_hex: str = maze.hex_repr
         self.display_ascii()
 
     @staticmethod
@@ -61,23 +54,12 @@ class AsciiRenderer:
                 wrong_choice = True
                 return choice, wrong_choice
 
-    def main(self) -> None:
+    def new_maze(self) -> None:
         """
-        Generate a maze and display it.
-
-        This method creates a maze using MazeGenerator and renders it
-        in ASCII format.
+        Generate a new maze with the same configuration and display it.
         """
-        maze = MazeGenerator(self.config)
-        maze.generate_maze()
-        self.name = maze.output_file
-        self.maze_height = maze.rows
-        self.maze_width = maze.cols
-        self.maze = maze.hex_repr
-        self.entry = maze.entry
-        self.exit = maze.exit
-        self.path = maze.path
-        self.display_ascii()
+        new_maze: MazeGenerator = MazeGenerator(self.maze._config_file)
+        AsciiRenderer(new_maze)
 
     def coordinates_path(self) -> list[tuple[int, int]]:
         """
@@ -87,8 +69,8 @@ class AsciiRenderer:
             list[tuple[int, int]]: Coordinates of the shortest solution path.
         """
         path = []
-        cx, cy = self.entry
-        for direction in self.path:
+        cx, cy = self.maze.entry
+        for direction in self.maze.path:
             x, y = MazeGenerator.offset[direction]
             cx += x
             cy += y
@@ -108,18 +90,18 @@ class AsciiRenderer:
         end_color = "\033[0m"
         line_top_border = (
             f"{wall_color}+{end_color}"
-            + f"{wall_color}---+{end_color}" * self.maze_width
+            + f"{wall_color}---+{end_color}" * self.maze.cols
         )
         print(line_top_border)
-        for line in self.maze[:-1].split("\n"):
+        for line in self.maze_hex[:-1].split("\n"):
             line_walls = f"{wall_color}|{end_color}"
             line_bottom = f"{wall_color}+{end_color}"
             acc_hexa = 0
             for hexa in line:
                 # check the content
-                if (acc_hexa, acc_line) == self.entry:
+                if (acc_hexa, acc_line) == self.maze.entry:
                     cell_content = "\033[32m■\033[0m"
-                elif (acc_hexa, acc_line) == self.exit:
+                elif (acc_hexa, acc_line) == self.maze.exit:
                     cell_content = "\033[31m■\033[0m"
                 elif hexa == "F":
                     cell_content = "■"
@@ -175,7 +157,7 @@ class AsciiRenderer:
                     choice, wrong = self.get_choice()
                 print("\033[2J")
             if choice == '1':
-                self.main()
+                self.new_maze()
                 break
             elif choice == '2':
                 print("\033[2J")
