@@ -1,4 +1,6 @@
 width=2i
 height=10
+EXIT=10,5
 algorithm=DFS
 perfect=false
+output_file=test_no_display

@@ -50,6 +50,7 @@ class MazeParser:
         self.quiet: bool = quiet
 
         # Set defaults first (exactly like original MazeGenerator)
+        self._config_file = config_file
         self.cols: int = 20
         self.rows: int = 10
         self.seed: Optional[int] = None
@@ -58,7 +59,7 @@ class MazeParser:
         self.exit: Tuple[int, int] = (self.cols - 1, self.rows - 1)
         self.output_file: str = "maze.txt"
         self.algorithm: str = "wilson"
-        self.display: str = "mlx"
+        self.display: str = "none"
 
         # Track which settings came from config file
         self._custom_keys: List[str] = []
@@ -68,6 +69,17 @@ class MazeParser:
         # Load config file if provided
         if config_file is not None:
             self._load_config(config_file)
+
+        # store coordinates of the 42 pattern
+        self.ft_walls: List[Tuple[int,int]] = self.get_42_cells(self.cols, self.rows)
+
+        # Check that entry/exit points are not stuck in 42 pattern
+        self._validate_entry_exit()
+
+        # print the final, validated configuration
+        if not self.quiet:
+            self._print_final_config()
+
 
     def _load_config(self, config_file: str) -> None:
         """
@@ -189,9 +201,13 @@ class MazeParser:
                     self.algorithm = v.lower()
                     custom.append(k)
                 elif k == "DISPLAY":
-                    if v.upper() not in ["ASCII", "MLX"]:
+                    if v.upper() == "ASCII":
+                        from ascii_renderer import AsciiRenderer
+                    elif v.upper() == "MLX":
+                        from mlx_renderer import MlxRenderer
+                    if v.upper() not in ["NONE", "ASCII", "MLX"]:
                         raise ValueError(
-                            f'Invalid display "{v}" pick ASCII or MLX'
+                            f'Invalid display "{v}" pick NONE, ASCII or MLX'
                         )
                     self.display = v.lower()
                     custom.append(k)
@@ -252,6 +268,99 @@ class MazeParser:
                 'use True/False, 1/0, Yes/No, or Y/N'
             )
 
+
+    def get_42_cells(self, w: int, h: int) -> List[tuple]:
+        """Calculate the coordinates of the 42 cells."""
+        if w < 11 or h < 9:
+            print("Warning: Maze too small for '42' pattern")
+            return []  # No 42_walls, maze too small
+        cx: int = (w - 1) // 2 if w % 2 == 0 else w // 2
+        cy: int = (h - 1) // 2 if h % 2 == 0 else h // 2
+
+        four_walls: List[tuple] = [
+                (cx - 1, cy), (cx - 2, cy), (cx - 3, cy),
+                (cx - 1, cy + 1), (cx - 1, cy + 2),
+                (cx - 3, cy - 1), (cx - 3, cy - 2)
+                ]
+        two_walls: List[tuple] = [
+                (cx + 1, cy), (cx + 2, cy), (cx + 3, cy),
+                (cx + 1, cy + 1), (cx + 1, cy + 2),
+                (cx + 3, cy - 1), (cx + 3, cy - 2),
+                (cx + 1, cy - 2), (cx + 2, cy - 2), (cx + 3, cy - 2),
+                (cx + 2, cy + 2), (cx + 3, cy + 2)
+                ]
+
+        return four_walls + two_walls
+
+    def _is_within_bounds(self, coord: tuple) -> bool:
+        """Check if a coordinate is within maze bounds."""
+        x, y = coord
+        if 0 <= x < self.cols and 0 <= y < self.rows:
+            return True
+        return False
+
+    def reset_default_entry_exit(self, point_type: str) -> None:
+        """Reset entry or exit to default value and remove from custom keys."""
+        if point_type == "ENTRY":
+            self.entry = (0, 0)
+            # Remove from custom keys since we're resetting to default
+            if "ENTRY" in self._custom_keys:
+                self._custom_keys.remove("ENTRY")
+        elif point_type == "EXIT":
+            self.exit = (self.cols - 1, self.rows - 1)
+            # Remove from custom keys since we're resetting to default
+            if "EXIT" in self._custom_keys:
+                self._custom_keys.remove("EXIT")
+
+    def _validate_entry_exit(self) -> None:
+        """Validate entry/exit by checking maze bounds and 42 cells."""
+        # Check if entry/exit coordinates are within maze bounds
+        if not self._is_within_bounds(self.entry):
+            if not self.quiet:
+                print(
+                        "Error: Entry point exceeds borders of the maze.\n"
+                        'Switching to default entry'
+                        )
+            self.reset_default_entry_exit("ENTRY")
+        if not self._is_within_bounds(self.exit):
+            if not self.quiet:
+                print(
+                        "Error: Exit point exceeds borders of the maze.\n"
+                        'Switching to default exit'
+                        )
+            self.reset_default_entry_exit("EXIT")
+
+        # Check if entry/exit coordinates conflict with 42 blocked cells
+        if self.entry in self.ft_walls:
+            if not self.quiet:
+                print(
+                        "Error: Entry point is stuck in the 42 pattern\n"
+                        "Switching to default entry"
+                        )
+            self.reset_default_entry_exit("ENTRY")
+        if self.exit in self.ft_walls:
+            if not self.quiet:
+                print(
+                        "Error: Exit point is stuck in the 42 pattern\n"
+                        "Switching to default exit"
+                        )
+            self.reset_default_entry_exit("EXIT")
+
+        if self.entry == self.exit:
+            if not self.quiet:
+                print(
+                        "Error: Entry and exit cannot have "
+                        "the same coordinates"
+                        )
+            if self.entry != (0, 0):
+                self.reset_default_entry_exit("ENTRY")
+                if not self.quiet:
+                    print("Switching to default entry")
+            if self.entry == self.exit:
+                self.reset_default_entry_exit("EXIT")
+                if not self.quiet:
+                    print("Switching to default exit")
+
     @property
     def is_displayable(self) -> bool:
         """
@@ -262,3 +371,47 @@ class MazeParser:
         """
         return self.cols <= 320 and self.rows <= 150
 
+    def _print_final_config(self) -> None:
+        """
+        Print the final validated configuration.
+
+        This is called AFTER entry/exit validation to ensure the printed
+        values reflect the actual configuration that will be used.
+        """
+        if self._config_file is None:
+            print("No config file, switching to default settings.")
+        elif not self._config_loaded:
+            print("Switching to default settings")
+
+        print("\nMaze configuration:")
+        config_items = {
+            "WIDTH": self.cols,
+            "HEIGHT": self.rows,
+            "ENTRY": self.entry,
+            "EXIT": self.exit,
+            "SEED": self.seed,
+            "PERFECT": self.perfect,
+            "ALGORITHM": self.algorithm,
+            "OUTPUT_FILE": self.output_file,
+            "DISPLAY": self.display
+        }
+
+        for k, v in config_items.items():
+            if k in self._custom_keys:
+                print(f"  {k}: {v}")
+            else:
+                print(f"  {k}: {v} (default)")
+        print()
+
+        # print max size warning messages
+        if not self.is_displayable:
+            print("Warning: Maze is waaaay too large - Aborting rendering!")
+            print("Maximum size for rendering: 320x150\n")
+            print(f"Encoding maze in {self.output_file}... (be patient!)")
+
+        elif self.cols > 120 or self.rows > 60:
+            print("Warning: Maze is quite large")
+            print("Consider generating a smaller maze")
+            print("for faster rendering and better visibility")
+            print("Recommended size for big mazes: 120x60\n")
+            print("Generating... (this might take a few minutes)")

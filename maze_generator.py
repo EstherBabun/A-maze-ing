@@ -73,13 +73,6 @@ class MazeGenerator:
         self.algorithm: str = parser.algorithm
         self.display: str = parser.display
 
-        # check against huge maze generation
-        # if self.display.upper() == "MLX": 
-        #     if self.cols >= 400 or self.rows >= 400:
-        #         print("Maze is waaay too big for mlx rendering.")
-        #         print("Aborting mission!")
-        #         return
-
         # Initialize remaining attributes
         self.tot_size: int = self.cols * self.rows
         self.path: str = ""
@@ -91,16 +84,6 @@ class MazeGenerator:
                 ]
         self.block_42_walls()
 
-        # Validate entry/exit points against maze structure
-        self._validate_entry_exit()
-
-        # Error message for "42" pattern if maze too small
-        if self.cols < 11 or self.rows < 9:
-            print("Warning: Maze too small for '42' pattern")
-
-        # print the final, validated configuration
-        self._print_final_config()
-
         self.unvisited: List[Cell] = [
             cell for row in self.grid
             for cell in row if not cell._is_42
@@ -111,115 +94,6 @@ class MazeGenerator:
         # store entry and exit cell objects
         self.entry_cell: Cell | None = self.get_cell(*self.entry)
         self.exit_cell: Cell | None = self.get_cell(*self.exit)
-
-    def _print_final_config(self) -> None:
-        """
-        Print the final validated configuration.
-
-        This is called AFTER entry/exit validation to ensure the printed
-        values reflect the actual configuration that will be used.
-        """
-        if self._config_file is None:
-            print("No config file, switching to default settings.")
-        elif not self._parser._config_loaded:
-            print("Switching to default settings")
-
-        print("\nMaze configuration:")
-        config_items = {
-            "WIDTH": self.cols,
-            "HEIGHT": self.rows,
-            "ENTRY": self.entry,
-            "EXIT": self.exit,
-            "SEED": self.seed,
-            "PERFECT": self.perfect,
-            "ALGORITHM": self.algorithm,
-            "OUTPUT_FILE": self.output_file,
-            "DISPLAY": self.display
-        }
-
-        for k, v in config_items.items():
-            if k in self._parser._custom_keys:
-                print(f"  {k}: {v}")
-            else:
-                print(f"  {k}: {v} (default)")
-        print()
-
-        # print max size warning messages
-        if not self._parser.is_displayable:
-            print("Warning: Maze is waaaay too large - Aborting rendering!")
-            print("Maximum size for rendering: 320x150\n")
-            print(f"Encoding maze in {self.output_file}... (be patient!)")
-
-        elif self.cols > 120 or self.rows > 60:
-            print("Warning: Maze is quite large")
-            print("Consider generating a smaller maze")
-            print("for faster rendering and better visibility")
-            print("Recommended size for big mazes: 120x60\n")
-            print("Rendering... (this might take a few minutes)")
-
-    def _is_within_bounds(self, coord: tuple) -> bool:
-        """Check if a coordinate is within maze bounds."""
-        x, y = coord
-        if 0 <= x < self.cols and 0 <= y < self.rows:
-            return True
-        return False
-
-    def reset_default_entry_exit(self, point_type: str) -> None:
-        """Reset entry or exit to default value and remove from custom keys."""
-        if point_type == "ENTRY":
-            self.entry = (0, 0)
-            # Remove from custom keys since we're resetting to default
-            if "ENTRY" in self._parser._custom_keys:
-                self._parser._custom_keys.remove("ENTRY")
-        elif point_type == "EXIT":
-            self.exit = (self.cols - 1, self.rows - 1)
-            # Remove from custom keys since we're resetting to default
-            if "EXIT" in self._parser._custom_keys:
-                self._parser._custom_keys.remove("EXIT")
-
-    def _validate_entry_exit(self) -> None:
-        """Validate entry/exit by checking maze bounds and 42 cells."""
-        # Check if entry/exit coordinates are within maze bounds
-        if not self._is_within_bounds(self.entry):
-            print(
-                "Error: Entry point exceeds borders of the maze.\n"
-                'Switching to default entry'
-            )
-            self.reset_default_entry_exit("ENTRY")
-        if not self._is_within_bounds(self.exit):
-            print(
-                "Error: Exit point exceeds borders of the maze.\n"
-                'Switching to default exit'
-            )
-            self.reset_default_entry_exit("EXIT")
-
-        # Check if entry/exit coordinates conflict with 42 blocked cells
-        ft_walls: List[tuple] = self.get_42_cells(self.cols, self.rows)
-        if self.entry in ft_walls:
-            print(
-                    "Error: Entry point is stuck in the 42 pattern\n"
-                    "Switching to default entry"
-                    )
-            self.reset_default_entry_exit("ENTRY")
-        if self.exit in ft_walls:
-            print(
-                    "Error: Exit point is stuck in the 42 pattern\n"
-                    "Switching to default exit"
-                    )
-            self.reset_default_entry_exit("EXIT")
-
-        if self.entry == self.exit:
-            print(
-                    "Error: Entry and exit cannot have "
-                    "the same coordinates"
-                    )
-            if self.entry != (0, 0):
-                self.reset_default_entry_exit("ENTRY")
-                print("Switching to default entry")
-            if self.entry == self.exit:
-                self.reset_default_entry_exit("EXIT")
-                print("Switching to default exit")
-
 
     def get_cell(self, x: int, y: int) -> Cell | None:
         """Get cell at (x, y), return None if out of borders."""
@@ -281,31 +155,10 @@ class MazeGenerator:
             cell.walls[direction] = 0
             neighbor.walls[self.opposite[direction]] = 0
 
-    def get_42_cells(self, w: int, h: int) -> List[tuple]:
-        """Calculate the coordinates of the 42 cells."""
-        if w < 11 or h < 9:
-            return []  # No 42_walls, maze too small
-        cx: int = (w - 1) // 2 if w % 2 == 0 else w // 2
-        cy: int = (h - 1) // 2 if h % 2 == 0 else h // 2
-
-        four_walls: List[tuple] = [
-                (cx - 1, cy), (cx - 2, cy), (cx - 3, cy),
-                (cx - 1, cy + 1), (cx - 1, cy + 2),
-                (cx - 3, cy - 1), (cx - 3, cy - 2)
-                ]
-        two_walls: List[tuple] = [
-                (cx + 1, cy), (cx + 2, cy), (cx + 3, cy),
-                (cx + 1, cy + 1), (cx + 1, cy + 2),
-                (cx + 3, cy - 1), (cx + 3, cy - 2),
-                (cx + 1, cy - 2), (cx + 2, cy - 2), (cx + 3, cy - 2),
-                (cx + 2, cy + 2), (cx + 3, cy + 2)
-                ]
-
-        return four_walls + two_walls
 
     def block_42_walls(self) -> None:
         """Prevent access to the 42 walls in the center of the maze."""
-        for x, y in self.get_42_cells(self.cols, self.rows):
+        for x, y in self._parser.ft_walls:
             self.grid[y][x]._is_42 = True
 
     def get_neighbors_cells(self, cell: Cell) -> List[Cell]:
