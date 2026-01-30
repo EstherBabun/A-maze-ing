@@ -5,6 +5,7 @@
 # Created: 2026/01/23 16:09:10
 # Updated: 2026/01/28 16:09:10
 
+from typing import Optional
 from maze_generator import MazeGenerator
 
 
@@ -13,21 +14,23 @@ class AsciiRenderer:
     Render a maze in the terminal using ASCII characters.
     """
 
-    def __init__(self, config: str) -> None:
+    def __init__(self, maze: MazeGenerator) -> None:
         """
         Initialize the ASCII renderer.
 
         Args:
             config (str): Name of the configuration file.
         """
-        self.name: str = ""
-        self.config: str = config
-        self.maze_height: int = 0
-        self.maze_width: int = 0
-        self.maze: str = ""
-        self.entry: tuple = ()
-        self.exit: tuple = ()
-        self.path: str = ""
+        maze.generate_maze()
+        self.config = maze._config_file
+        self.name = maze.output_file
+        self.maze_height = maze.rows
+        self.maze_width = maze.cols
+        self.maze = maze.hex_repr
+        self.entry = maze.entry
+        self.exit = maze.exit
+        self.path = maze.path
+        self.display_ascii()
 
     @staticmethod
     def show_menu() -> None:

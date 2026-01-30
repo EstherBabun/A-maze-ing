@@ -1,7 +1,0 @@
-WIDTH=20
-HEIGHT=10
-ENTRY=12,2
-ALGORITHM=Wilson
-PERFECT=False
-OUTPUT_FILE=perfect_maze.txt
-Display=ascii
