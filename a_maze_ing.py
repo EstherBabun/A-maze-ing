@@ -14,8 +14,7 @@ appropriate maze renderer based on the configuration file.
 
 import sys
 from maze_parser import MazeParser
-from mlx_renderer import MlxRenderer
-from ascii_renderer import AsciiRenderer
+from maze_generator import MazeGenerator
 
 
 def main() -> None:
@@ -25,36 +24,30 @@ def main() -> None:
     This function selects the appropriate renderer based on the
     configuration file and starts the maze display.
     """
-    # if no config file:
+    # if no config file: no display
     if len(sys.argv) == 1:
-        mlx_d = MlxRenderer()
+        maze = MazeGenerator()
 
     # if config file:
     elif len(sys.argv) == 2:
         config_file: str = sys.argv[1]
-
-        # instanciate parser
-        parser: MazeParser = MazeParser(config_file, False)
-
-        # check if maze size can be rendered
-        if parser.is_displayable:
-
-            # launch selected display mode
-            if parser.display == "ascii":
-                ascii_d = AsciiRenderer(config_file)
-            else:
-                mlx_d = MlxRenderer(config_file)
-
-        # Generate maze without display
-        else:
-            from maze_generator import MazeGenerator
-            maze = MazeGenerator(config_file)
-            maze.generate_maze()
-            return
+        maze = MazeGenerator(config_file)
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
+
+    # check if display mode is activated
+    # and if maze size can be rendered
+    if maze.display != "none" and maze.is_displayable:
+        from mlx_renderer import MlxRenderer
+        from ascii_renderer import AsciiRenderer
+        # launch selected display mode
+        if maze.display == "ascii":
+            ascii_d = AsciiRenderer(maze)
+        else:
+            mlx_d = MlxRenderer(maze)
         return
 
+    maze.generate_maze()
 
 if __name__ == "__main__":
     main()

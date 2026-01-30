@@ -25,7 +25,7 @@ class MlxRenderer:
             "W": (-1, 0)
             }
 
-    def __init__(self, config: Optional[str] = None) -> None:
+    def __init__(self, maze: MazeGenerator) -> None:
         """
         Initialize MLX renderer.
 
@@ -69,7 +69,7 @@ class MlxRenderer:
         self.ptr = self.m.mlx_init()
 
         # declare maze data
-        self.maze_gen: MazeGenerator = None
+        self.maze_gen: MazeGenerator = maze
         self.config_file: str
         self.maze_w: int
         self.maze_h: int
@@ -130,12 +130,11 @@ class MlxRenderer:
         self.color_path = green["path"]
         self.color_cursor = 0x005080
 
-        # create a maze
-        self.create_maze(config)
-
+        # generate maze and update data
+        self.maze_gen.generate_maze()
+        self.update_maze_data()
         # create and configure renderer
         self.configure_renderer()
-
         # execute rendering operations
         self.display()
 
@@ -150,26 +149,25 @@ class MlxRenderer:
             x, y = next_coord
         self.soluce_path = soluce_path[:-1]
 
+    def update_maze_data(self) -> None:
+        self.config_file = self.maze_gen._config_file
+        self.maze_w = self.maze_gen.cols
+        self.maze_h = self.maze_gen.rows
+        self.grid = self.maze_gen.grid
+        self.entry = self.maze_gen.entry
+        self.exit = self.maze_gen.exit
+        self.convert_soluce_path(self.maze_gen.path)
+        self.solution: bool = False
+        self.current_cell = self.maze_gen.entry_cell
+        self.navigation_path = [self.entry]
+
+
     def create_maze(self, config: str) -> bool:
         """Create maze instance and initialize maze data."""
-        self.config_file = config
         maze_gen = MazeGenerator(config)
-        self.maze_gen = maze_gen
-        # store maze data
-        self.maze_w = maze_gen.cols
-        self.maze_h = maze_gen.rows
-        self.grid = maze_gen.grid
-        self.entry = maze_gen.entry
-        self.exit = maze_gen.exit
-
-        # generate maze
         maze_gen.generate_maze()
-
-        # store maze extra data
-        self.convert_soluce_path(maze_gen.path)
-        self.solution: bool = False
-        self.current_cell = maze_gen.entry_cell
-        self.navigation_path = [self.entry]
+        self.maze_gen = maze_gen
+        self.update_maze_data()
 
     def set_cell_size_and_wall_thickness(self) -> None:
         """Calculate cell size according to screen and maze size."""

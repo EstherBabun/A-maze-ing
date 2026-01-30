@@ -37,7 +37,7 @@ class MazeParser:
     def __init__(
             self,
             config_file: Optional[str] = None,
-            quiet: Optional[bool] = True
+            quiet: Optional[bool] = False
             ) -> None:
         """
         Initialize the parser with default values.
@@ -165,11 +165,15 @@ class MazeParser:
                 if k == "WIDTH":
                     if int(v) < 2:
                         raise ValueError("width cannot be less than 2")
+                    if int(v) > 350:
+                        raise ValueError("width cannot be more than 350")
                     self.cols = int(v)
                     custom.append(k)
                 elif k == "HEIGHT":
                     if int(v) < 2:
                         raise ValueError("height cannot be less than 2")
+                    if int(v) > 200:
+                        raise ValueError("height cannot be more than 200")
                     self.rows = int(v)
                     custom.append(k)
                 elif k == "ENTRY":
@@ -362,7 +366,7 @@ class MazeParser:
                     print("Switching to default exit")
 
     @property
-    def is_displayable(self) -> bool:
+    def is_displayable(self) -> None:
         """
         Check if maze dimensions are compatible with rendering.
         
@@ -403,15 +407,20 @@ class MazeParser:
                 print(f"  {k}: {v} (default)")
         print()
 
+        if self.display == "none":
+            if self.cols > 120 and self.rows > 60: 
+                print("Warning: Maze is quite large (be patient!)")
+            print(f"Encoding maze in {self.output_file}...") 
+        else:
         # print max size warning messages
-        if not self.is_displayable:
-            print("Warning: Maze is waaaay too large - Aborting rendering!")
-            print("Maximum size for rendering: 320x150\n")
-            print(f"Encoding maze in {self.output_file}... (be patient!)")
+            if not self.is_displayable:
+                print("Warning: Maze is too large for rendering")
+                print("Maximum displayable size: 320x150\n")
+                print(f"Encoding maze in {self.output_file}... (be patient!)")
 
-        elif self.cols > 120 or self.rows > 60:
-            print("Warning: Maze is quite large")
-            print("Consider generating a smaller maze")
-            print("for faster rendering and better visibility")
-            print("Recommended size for big mazes: 120x60\n")
-            print("Generating... (this might take a few minutes)")
+            elif self.cols > 120 and self.rows > 60:
+                print("Warning: Maze is quite large")
+                print("Consider generating a smaller maze")
+                print("for faster rendering and better visibility")
+                print("Recommended size for big mazes: 120x60\n")
+                print("Rendering... (this might take a few minutes)")

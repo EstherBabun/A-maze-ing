@@ -72,6 +72,7 @@ class MazeGenerator:
         self.output_file: str = parser.output_file
         self.algorithm: str = parser.algorithm
         self.display: str = parser.display
+        self.is_displayable: bool = parser.is_displayable
 
         # Initialize remaining attributes
         self.tot_size: int = self.cols * self.rows
@@ -378,3 +379,20 @@ class MazeGenerator:
                 f.write(self.path + "\n")
         except Exception as e:
             print(f"Error writing file: {e}")
+
+if __name__ == "__main__":
+    import sys
+    # if no config file:
+    if len(sys.argv) == 1:
+        maze = MazeGenerator()
+        maze.generate_maze()
+
+    # if config file:
+    elif len(sys.argv) == 2:
+        config_file: str = sys.argv[1]
+        maze = MazeGenerator(config_file)
+        if maze._parser.display != "none":
+            print("Info: Rendering modules are not included: use display=None")
+        maze.generate_maze()
+    else:
+        print("Usage: python3 a_maze_ing.py config_file(optional)")
