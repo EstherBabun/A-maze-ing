@@ -391,8 +391,6 @@ if __name__ == "__main__":
     elif len(sys.argv) == 2:
         config_file: str = sys.argv[1]
         maze = MazeGenerator(config_file)
-        if maze._parser.display != "none":
-            print("Info: Rendering modules are not included: use display=None")
         maze.generate_maze()
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
