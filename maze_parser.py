@@ -62,6 +62,7 @@ class MazeParser:
         self.display: Optional[str] = None
 
         # Track if max width or height have been enforced
+        self.max: bool = False
         # Track which settings came from config file
         self._custom_keys: List[str] = []
         # Track if there was a file error
@@ -162,7 +163,6 @@ class MazeParser:
         custom: List[str] = []
 
         for k, v in raw_config.items():
-            self.max: bool = False
             try:
                 if k == "WIDTH":
                     if int(v) < 2:
@@ -228,7 +228,7 @@ class MazeParser:
             except Exception as e:
                 if not self.quiet:
                     print(f'Error in {k}: {e}')
-                    if self.max:
+                    if self.max and (k == "WIDTH" or k == "HEIGHT"):
                         print(f'Enforcing max {k.lower()}')
                     elif k == "DISPLAY":
                         print('Aborting rendering')
