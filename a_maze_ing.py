@@ -35,19 +35,14 @@ def main() -> None:
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
 
-    # check if display mode is activated
-    # and if maze size can be rendered
-    if maze.display != "none" and maze.is_displayable:
-        from mlx_renderer import MlxRenderer
+    # launch selected display mode
+    if maze.display == "ascii":
         from ascii_renderer import AsciiRenderer
-        # launch selected display mode
-        if maze.display == "ascii":
-            ascii_d = AsciiRenderer(maze)
-        else:
-            mlx_d = MlxRenderer(maze)
-        return
+        ascii_d = AsciiRenderer(maze)
+    elif maze.display == "mlx":
+        from mlx_renderer import MlxRenderer
+        mlx_d = MlxRenderer(maze)
 
-    maze.generate_maze()
 
 if __name__ == "__main__":
     main()

@@ -59,7 +59,7 @@ class MazeParser:
         self.exit: Tuple[int, int] = (self.cols - 1, self.rows - 1)
         self.output_file: str = "maze.txt"
         self.algorithm: str = "wilson"
-        self.display: str = "none"
+        self.display: str = None
 
         # Track which settings came from config file
         self._custom_keys: List[str] = []
@@ -161,11 +161,14 @@ class MazeParser:
         custom: List[str] = []
 
         for k, v in raw_config.items():
+            maxi: bool = False
             try:
                 if k == "WIDTH":
                     if int(v) < 2:
                         raise ValueError("width cannot be less than 2")
                     if int(v) > 350:
+                        maxi = True
+                        self.cols = 350
                         raise ValueError("width cannot be more than 350")
                     self.cols = int(v)
                     custom.append(k)
@@ -173,6 +176,8 @@ class MazeParser:
                     if int(v) < 2:
                         raise ValueError("height cannot be less than 2")
                     if int(v) > 200:
+                        maxi = True
+                        self.rows = 200
                         raise ValueError("height cannot be more than 200")
                     self.rows = int(v)
                     custom.append(k)
@@ -186,7 +191,8 @@ class MazeParser:
                     self.perfect = self._parse_boolean(v, k)
                     custom.append(k)
                 elif k == "SEED":
-                    self.seed = int(v)
+                    if v.upper() != "NONE":
+                        self.seed = int(v)
                     custom.append(k)
                 elif k == "OUTPUT_FILE":
                     if not v.endswith('.txt'):
@@ -213,7 +219,8 @@ class MazeParser:
                         raise ValueError(
                             f'Invalid display "{v}" pick NONE, ASCII or MLX'
                         )
-                    self.display = v.lower()
+                    if v.upper() != "NONE":
+                        self.display = v.lower()
                     custom.append(k)
                 else:
                     if not self.quiet:
@@ -224,7 +231,20 @@ class MazeParser:
                                 )
             except Exception as e:
                 if not self.quiet:
-                    print(f'Error in {k}: {e}\nSwitching to default {k.lower()}')
+                    print(f'Error in {k}: {e}')
+                    if maxi:
+                        print(f'Enforcing max {k.lower()}')
+                    else:
+                        print(f'Switching to default {k.lower()}')
+
+
+
+        if self.display and not self.is_displayable:
+            if not self.quiet:
+                print(f"Error: Size is too big for {self.display} rendering")
+                print("Aborting rendering")
+            self.display = None
+            custom.remove("DISPLAY")
 
         return custom
 
@@ -404,7 +424,12 @@ class MazeParser:
             if k in self._custom_keys:
                 print(f"  {k}: {v}")
             else:
-                print(f"  {k}: {v} (default)")
+                if k == "WIDTH" and self.cols == 350:
+                    print(f"  {k}: {v} (max)")
+                elif k == "HEIGHT" and self.rows == 200:
+                    print(f"  {k}: {v} (max)")
+                else:
+                    print(f"  {k}: {v} (default)")
         print()
 
         if self.display == "none":

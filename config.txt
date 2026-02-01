@@ -1,0 +1,8 @@
+width=360
+height=250
+entry=40,15
+perfect=false
+seed=None
+display=mlx
+
+

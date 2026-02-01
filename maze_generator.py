@@ -96,6 +96,9 @@ class MazeGenerator:
         self.entry_cell: Cell | None = self.get_cell(*self.entry)
         self.exit_cell: Cell | None = self.get_cell(*self.exit)
 
+        # generate maze structure
+        self.generate_maze()
+
     def get_cell(self, x: int, y: int) -> Cell | None:
         """Get cell at (x, y), return None if out of borders."""
         if 0 <= x < self.cols and 0 <= y < self.rows:
