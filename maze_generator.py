@@ -388,12 +388,10 @@ if __name__ == "__main__":
     # if no config file:
     if len(sys.argv) == 1:
         maze = MazeGenerator()
-        maze.generate_maze()
 
     # if config file:
     elif len(sys.argv) == 2:
         config_file: str = sys.argv[1]
         maze = MazeGenerator(config_file)
-        maze.generate_maze()
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")

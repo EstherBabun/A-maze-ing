@@ -114,11 +114,11 @@ class MazeParser:
                 content: str = f.read()
                 if content == '':
                     if not self.quiet:
-                        print("Config file is empty")
+                        print("\nConfig file is empty")
                     return None
 
                 if not self.quiet:
-                    print(f"Loading settings from config file {file}...")
+                    print(f"\nLoading settings from config file {file}...")
                 raw_config: Dict[str, str] = {}
 
                 for line in content.splitlines():
@@ -234,10 +234,10 @@ class MazeParser:
                     print(f'Error in {k}: {e}')
                     if maxi:
                         print(f'Enforcing max {k.lower()}')
+                    elif k == "DISPLAY":
+                        print('Aborting rendering')
                     else:
                         print(f'Switching to default {k.lower()}')
-
-
 
         if self.display and not self.is_displayable:
             if not self.quiet:
@@ -432,7 +432,7 @@ class MazeParser:
                     print(f"  {k}: {v} (default)")
         print()
 
-        if self.display == "none":
+        if not self.display:
             if self.cols > 120 and self.rows > 60: 
                 print("Warning: Maze is quite large (be patient!)")
             print(f"Encoding maze in {self.output_file}...") 
