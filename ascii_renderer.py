@@ -20,7 +20,6 @@ class AsciiRenderer:
         Args:
             config (str): Name of the configuration file.
         """
-        maze.generate_maze()
         self.maze = maze
         self.maze_hex: str = maze.hex_repr
         self.display_ascii()
@@ -45,14 +44,11 @@ class AsciiRenderer:
             tuple[str, bool]: The selected choice and a flag indicating
             whether an invalid choice was previously entered.
         """
-        wrong_choice = False
-        while True:
-            choice = input("Choice? (1-4): ")
-            if choice in ("1", "2", "3", "4"):
-                return choice, wrong_choice
-            else:
-                wrong_choice = True
-                return choice, wrong_choice
+        choice = input("Choice? (1-4): ")
+        if choice in ("1", "2", "3", "4"):
+            return choice, False
+        else:
+            return choice, True
 
     def new_maze(self) -> None:
         """

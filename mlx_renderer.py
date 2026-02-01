@@ -18,12 +18,6 @@ class MlxRenderer:
 
     YELLOW = 0xFFFF00
     BLUE = 0x00FFFF
-    OFFSET: Dict[str, tuple] = {
-            "N": (0, -1),
-            "S": (0, 1),
-            "E": (1, 0),
-            "W": (-1, 0)
-            }
 
     def __init__(self, maze: MazeGenerator) -> None:
         """
@@ -68,20 +62,16 @@ class MlxRenderer:
         self.m = Mlx()
         self.ptr = self.m.mlx_init()
 
-        # declare maze data
-        self.maze_gen: MazeGenerator = maze
-        self.config_file: str
-        self.maze_w: int
-        self.maze_h: int
-        self.grid: List[List[Cell]] = []
-        self.entry: Tuple[int, int]
-        self.exit: Tuple[int, int]
+        # Initialize maze
+        self.maze: MazeGenerator = maze
+
+        # declare attributes for solution toggling
         self.solution: bool = False
-        self.soluce_path: List[Tuple[int, int]]
+        self.convert_soluce_path()
 
         # declare current coordinates and path for navigation
-        self.current_cell: Cell = None
-        self.navigation_path: List[Tuple[int, int]] = []
+        self.current_cell: Cell = self.maze.entry_cell
+        self.navigation_path: List[Tuple[int, int]] = [self.maze.entry]
 
         # declare MLX data
         self.screen_w: int = 0
@@ -130,44 +120,30 @@ class MlxRenderer:
         self.color_path = green["path"]
         self.color_cursor = 0x005080
 
-        # generate maze and update data
-        self.maze_gen.generate_maze()
-        self.update_maze_data()
         # create and configure renderer
         self.configure_renderer()
         # execute rendering operations
         self.display()
 
-    def convert_soluce_path(self, path) -> None:
+    def convert_soluce_path(self) -> None:
         """Convert directions to coordinates."""
         soluce_path: List[Tuple[int, int]] = []
-        x, y = self.entry
-        for direction in path:
-            ox, oy = self.OFFSET[direction]
+        x, y = self.maze.entry
+        for direction in self.maze.path:
+            ox, oy = MazeGenerator.offset[direction]
             next_coord = (x + ox, y + oy)
             soluce_path.append(next_coord)
             x, y = next_coord
         self.soluce_path = soluce_path[:-1]
 
-    def update_maze_data(self) -> None:
-        self.config_file = self.maze_gen._config_file
-        self.maze_w = self.maze_gen.cols
-        self.maze_h = self.maze_gen.rows
-        self.grid = self.maze_gen.grid
-        self.entry = self.maze_gen.entry
-        self.exit = self.maze_gen.exit
-        self.convert_soluce_path(self.maze_gen.path)
-        self.solution: bool = False
-        self.current_cell = self.maze_gen.entry_cell
-        self.navigation_path = [self.entry]
-
-
-    def create_maze(self, config: str) -> bool:
+    def create_maze(self) -> bool:
         """Create maze instance and initialize maze data."""
-        maze_gen = MazeGenerator(config)
-        maze_gen.generate_maze()
-        self.maze_gen = maze_gen
-        self.update_maze_data()
+        new_maze = MazeGenerator(self.maze._config_file)
+        self.maze = new_maze
+        self.convert_soluce_path()
+        self.solution: bool = False
+        self.current_cell = self.maze.entry_cell
+        self.navigation_path = [self.maze.entry]
 
     def set_cell_size_and_wall_thickness(self) -> None:
         """Calculate cell size according to screen and maze size."""
@@ -188,7 +164,7 @@ class MlxRenderer:
         # Determine which dimension gets the extra space
         # The extra space is 300(width) or 200(height) pixels wide
         # Remove those pixels from the available space for the maze image
-        if self.maze_h > self.maze_w:
+        if self.maze.rows > self.maze.cols:
             # Tall maze: extra space goes to the right
             # Available space for maze image = usable_width - 300 pixels
             self.margin = ("right", 300)
@@ -202,12 +178,12 @@ class MlxRenderer:
             available_height = usable_height - self.margin[1]
 
         # Calculate optimal cell size ACCOUNTING FOR EXTRA SPACE
-        if (self.cell_size * self.maze_w) > available_width:
-            self.cell_size = int(available_width // self.maze_w)
+        if (self.cell_size * self.maze.cols) > available_width:
+            self.cell_size = int(available_width // self.maze.cols)
 
-        if (self.cell_size * self.maze_h) > available_height:
+        if (self.cell_size * self.maze.rows) > available_height:
             self.cell_size = min(
-                    self.cell_size, int(available_height // self.maze_h)
+                    self.cell_size, int(available_height // self.maze.rows)
                     )
 
         # Enforce minimum
@@ -224,8 +200,8 @@ class MlxRenderer:
     def set_window_and_img_size(self) -> None:
         """Calculate window and image sizes."""
         # Calculate maze image size
-        self.img_w = self.maze_w * self.cell_size
-        self.img_h = self.maze_h * self.cell_size
+        self.img_w = self.maze.cols * self.cell_size
+        self.img_h = self.maze.rows * self.cell_size
 
         # Calculate window size with the extra space
         # use +300 instead of * 1.60 for a consistent empty space
@@ -344,7 +320,7 @@ class MlxRenderer:
 
     def draw_walls(self, x: int, y: int) -> None:
         """Draw all walls of the given cell."""
-        cell: Cell = self.maze_gen.get_cell(x, y)
+        cell: Cell = self.maze.get_cell(x, y)
         if cell is not None:
             if cell.walls["W"] == 1:
                 self.draw_west_wall(x, y, self.color_wall)
@@ -362,15 +338,15 @@ class MlxRenderer:
         end_x = start_x + fraction
         start_y = y * self.cell_size + fraction
         end_y = start_y + fraction
-        if (x, y) == self.entry:
+        if (x, y) == self.maze.entry:
             self.draw(start_x, end_x, start_y, end_y, self.BLUE)
-        elif (x, y) == self.exit:
+        elif (x, y) == self.maze.exit:
             self.draw(start_x, end_x, start_y, end_y, self.YELLOW)
 
     def create_image(self):
         """Create original maze image."""
         # Draw cases
-        for row in self.grid:
+        for row in self.maze.grid:
             for cell in row:
                 x, y = cell.coord
                 # draw cells
@@ -384,7 +360,7 @@ class MlxRenderer:
                 # Draw walls
                 self.draw_walls(x, y)
                 # Draw entry and exit
-                if (x, y) == self.entry or (x, y) == self.exit:
+                if (x, y) == self.maze.entry or (x, y) == self.maze.exit:
                     self.draw_entry_exit(x, y,)
 
         # Display the image
@@ -394,7 +370,7 @@ class MlxRenderer:
     def toggle_solution(self, color) -> None:
         """Toggle solution path on and off."""
         # Draw(COLOR_PATH) or erase(COLOR_BG) solution
-        for row in self.grid:
+        for row in self.maze.grid:
             for cell in row:
                 x, y = cell.coord
                 if (x, y) in self.soluce_path:
@@ -409,10 +385,10 @@ class MlxRenderer:
 
     def toggle_colors(self) -> None:
         """Toggle maze colors."""
-        for row in self.grid:
+        for row in self.maze.grid:
             for cell in row:
                 x, y = cell.coord
-                if (x, y) in self.navigation_path and (x, y) != self.entry:
+                if (x, y) in self.navigation_path and (x, y) != self.maze.entry:
                     self.draw_cell(x, y, self.color_cursor)
                 if self.solution and (x, y) in self.soluce_path:
                     self.draw_cell(x, y, self.color_path)
@@ -427,7 +403,7 @@ class MlxRenderer:
     def delete_navigation_path(self) -> None:
         """Delete the entire navigation path."""
         for (x, y) in self.navigation_path:
-            if (x, y) != self.entry:
+            if (x, y) != self.maze.entry:
                 if self.solution and (x, y) not in self.soluce_path:
                     self.draw_cell(x, y, self.color_bg)
                     self.draw_walls(x, y)
@@ -435,8 +411,8 @@ class MlxRenderer:
                     self.draw_cell(x, y, self.color_bg)
                     self.draw_walls(x, y)
         # reset starting point and navigation path
-        self.current_cell = self.maze_gen.entry_cell
-        self.navigation_path = [self.entry]
+        self.current_cell = self.maze.entry_cell
+        self.navigation_path = [self.maze.entry]
 
         # Display the image
         self.m.mlx_put_image_to_window(
@@ -445,10 +421,10 @@ class MlxRenderer:
     def navigate(self, direction) -> None:
         """Navigate in the maze, coloring cell in given direction."""
         current = self.current_cell
-        next_cell = self.maze_gen.get_neighbor(current, direction)
+        next_cell = self.maze.get_neighbor(current, direction)
         if next_cell is not None and current.walls[direction] == 0:
             x, y = next_cell.coord
-            if next_cell.coord == self.exit:
+            if next_cell.coord == self.maze.exit:
                 return
             if next_cell.coord in self.navigation_path:
                 idx = self.navigation_path.index(next_cell.coord)
@@ -459,7 +435,7 @@ class MlxRenderer:
                         self.draw_cell(dx, dy, self.color_path)
                     else:
                         self.draw_cell(dx, dy, self.color_bg)
-                    if (x, y) == self.entry or (x, y) == self.exit:
+                    if (x, y) == self.maze.entry or (x, y) == self.maze.exit:
                         self.draw_entry_exit(x, y,)
                     self.draw_walls(dx, dy)
             else:
@@ -508,14 +484,14 @@ class MlxRenderer:
 
         # r key -> re-generate new maze
         elif keynum == 114:
-            print("Generating new maze...")
+            print("\nGenerating new maze...")
             self.m.mlx_clear_window(self.ptr, self.win_ptr)
             self.m.mlx_destroy_image(self.ptr, self.img_ptr)
             self.m.mlx_destroy_window(self.ptr, self.win_ptr)
             self.m.mlx_loop_exit(self.ptr)
             # create new maze
-            self.create_maze(self.config_file)
-            # create configure and launch renderer
+            self.create_maze()
+            # configure and launch renderer
             self.configure_renderer()
             self.display()
 

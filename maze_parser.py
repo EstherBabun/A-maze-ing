@@ -59,8 +59,10 @@ class MazeParser:
         self.exit: Tuple[int, int] = (self.cols - 1, self.rows - 1)
         self.output_file: str = "maze.txt"
         self.algorithm: str = "wilson"
-        self.display: str = "none"
+        self.display: Optional[str] = None
 
+        # Track if max width or height have been enforced
+        self.max: bool = False
         # Track which settings came from config file
         self._custom_keys: List[str] = []
         # Track if there was a file error
@@ -96,7 +98,7 @@ class MazeParser:
             # Adjust default exit if WIDTH/HEIGHT changed but EXIT wasn't specified
             if (("WIDTH" in self._custom_keys
                 or "HEIGHT" in self._custom_keys)
-                    and "EXIT" not in self._custom_keys):
+                    and "EXIT" not in self._custom_keys) or self.max:
                 self.exit = (self.cols - 1, self.rows - 1)
 
     def _read_config_file(self, file: str) -> Optional[Dict[str, str]]:
@@ -114,11 +116,11 @@ class MazeParser:
                 content: str = f.read()
                 if content == '':
                     if not self.quiet:
-                        print("Config file is empty")
+                        print("\nConfig file is empty")
                     return None
 
                 if not self.quiet:
-                    print(f"Loading settings from config file {file}...")
+                    print(f"\nLoading settings from config file {file}...")
                 raw_config: Dict[str, str] = {}
 
                 for line in content.splitlines():
@@ -166,6 +168,8 @@ class MazeParser:
                     if int(v) < 2:
                         raise ValueError("width cannot be less than 2")
                     if int(v) > 350:
+                        self.max = True
+                        self.cols = 350
                         raise ValueError("width cannot be more than 350")
                     self.cols = int(v)
                     custom.append(k)
@@ -173,6 +177,8 @@ class MazeParser:
                     if int(v) < 2:
                         raise ValueError("height cannot be less than 2")
                     if int(v) > 200:
+                        self.max = True
+                        self.rows = 200
                         raise ValueError("height cannot be more than 200")
                     self.rows = int(v)
                     custom.append(k)
@@ -186,16 +192,11 @@ class MazeParser:
                     self.perfect = self._parse_boolean(v, k)
                     custom.append(k)
                 elif k == "SEED":
-                    self.seed = int(v)
+                    if v.upper() != "NONE":
+                        self.seed = int(v)
                     custom.append(k)
                 elif k == "OUTPUT_FILE":
-                    if not v.endswith('.txt'):
-                        v = v + '.txt'
-                    with open(v, "w") as f:
-                        f.write("testing...")
-                    if not self.quiet:
-                        print(f"Info: Added .txt extension to output file: {v}")
-                    self.output_file = v
+                    self.output_file = self._parse_output_file(v, k)
                     custom.append(k)
                 elif k == "ALGORITHM":
                     if v.upper() not in ["DFS", "WILSON"]:
@@ -205,15 +206,17 @@ class MazeParser:
                     self.algorithm = v.lower()
                     custom.append(k)
                 elif k == "DISPLAY":
-                    if v.upper() == "ASCII":
-                        from ascii_renderer import AsciiRenderer
-                    elif v.upper() == "MLX":
-                        from mlx_renderer import MlxRenderer
+                    import importlib.util
+                    if v.upper() in ("ASCII", "MLX"):
+                        module = v.lower() + "_renderer"
+                        if importlib.util.find_spec(module) is None:
+                            raise ImportError(f"Rendering module '{module}' is not available")
                     if v.upper() not in ["NONE", "ASCII", "MLX"]:
                         raise ValueError(
                             f'Invalid display "{v}" pick NONE, ASCII or MLX'
                         )
-                    self.display = v.lower()
+                    if v.upper() != "NONE":
+                        self.display = v.lower()
                     custom.append(k)
                 else:
                     if not self.quiet:
@@ -224,7 +227,20 @@ class MazeParser:
                                 )
             except Exception as e:
                 if not self.quiet:
-                    print(f'Error in {k}: {e}\nSwitching to default {k.lower()}')
+                    print(f'Error in {k}: {e}')
+                    if self.max and (k == "WIDTH" or k == "HEIGHT"):
+                        print(f'Enforcing max {k.lower()}')
+                    elif k == "DISPLAY":
+                        print('Aborting rendering')
+                    else:
+                        print(f'Switching to default {k.lower()}')
+
+        if self.display and not self.is_displayable:
+            if not self.quiet:
+                print(f"Error: Size is too big for {self.display} rendering")
+                print("Aborting rendering")
+            self.display = None
+            custom.remove("DISPLAY")
 
         return custom
 
@@ -272,6 +288,42 @@ class MazeParser:
                 'use True/False, 1/0, Yes/No, or Y/N'
             )
 
+    def _parse_output_file(self, value:str, key: str) -> str:
+        """
+        Parse a output_file name from string.
+
+        Args:
+            value (str): String representation of path/to/output_file
+            key (str): Configuration key name (for error messages)
+
+        Returns:
+            str: Parsed string value
+
+        Raises:
+            File related Errors: If value is not a valid file path
+        """
+        import os
+        if not value.endswith('.txt'):
+            value = value + '.txt'
+            if not self.quiet:
+                print(f"Info: Added .txt extension to output file: {value}")
+        # check the directory of output_file
+        directory = os.path.dirname(value) or "."
+        if not os.path.isdir(directory):
+            raise FileNotFoundError(
+                        f'Directory does not exist: "{directory}"'
+                        )
+        if not os.access(directory, os.W_OK):
+            raise PermissionError(
+                        f'No write permission in: "{directory}"'
+                        )
+        # check the basename of output file
+        basename = os.path.basename(value)
+        if not basename or basename == '.txt':
+            raise ValueError(f'Invalid output filename: "{value}"')
+        if len(basename) > 255:
+            raise ValueError(f'Filename too long: {len(basename)} chars (max 255)')
+        return value
 
     def get_42_cells(self, w: int, h: int) -> List[tuple]:
         """Calculate the coordinates of the 42 cells."""
@@ -290,7 +342,7 @@ class MazeParser:
                 (cx + 1, cy), (cx + 2, cy), (cx + 3, cy),
                 (cx + 1, cy + 1), (cx + 1, cy + 2),
                 (cx + 3, cy - 1), (cx + 3, cy - 2),
-                (cx + 1, cy - 2), (cx + 2, cy - 2), (cx + 3, cy - 2),
+                (cx + 1, cy - 2), (cx + 2, cy - 2),
                 (cx + 2, cy + 2), (cx + 3, cy + 2)
                 ]
 
@@ -366,7 +418,7 @@ class MazeParser:
                     print("Switching to default exit")
 
     @property
-    def is_displayable(self) -> None:
+    def is_displayable(self) -> bool:
         """
         Check if maze dimensions are compatible with rendering.
         
@@ -404,10 +456,15 @@ class MazeParser:
             if k in self._custom_keys:
                 print(f"  {k}: {v}")
             else:
-                print(f"  {k}: {v} (default)")
+                if k == "WIDTH" and self.cols == 350:
+                    print(f"  {k}: {v} (max)")
+                elif k == "HEIGHT" and self.rows == 200:
+                    print(f"  {k}: {v} (max)")
+                else:
+                    print(f"  {k}: {v} (default)")
         print()
 
-        if self.display == "none":
+        if not self.display:
             if self.cols > 120 and self.rows > 60: 
                 print("Warning: Maze is quite large (be patient!)")
             print(f"Encoding maze in {self.output_file}...") 
