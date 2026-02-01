@@ -1,5 +1,8 @@
-width=5464
-height=5465456
-display=mlx
-entry=1,1
-exit=25,13
+WIDTH=2000
+HEIGHT=10
+ENTRY=12,2
+ALGORITHM=dfs
+PERFECT=No
+OUTPUT_FILE=output/maze.txt
+Display=mlx
+
