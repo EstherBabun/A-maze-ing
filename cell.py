@@ -8,7 +8,7 @@
 from typing import Dict
 
 
-class Cell(object):
+class Cell:
     """Represent a cell in a 2D maze grid."""
 
     def __init__(self, x: int, y: int) -> None:
@@ -20,7 +20,7 @@ class Cell(object):
             y (int): Row index of the cell.
         """
         self.coord: tuple = (x, y)
-        self.walls: Dict[str, int] = {"W": 1, "S": 1, "E": 1, "N": 1}
+        self.walls: dict[str, int] = {"W": 1, "S": 1, "E": 1, "N": 1}
         self.visited: bool = False
         self._is_42: bool = False
 

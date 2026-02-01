@@ -7,7 +7,7 @@
 
 """A module to parse a config file, generate a maze and solve it."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 import random
 from collections import deque
 from cell import Cell
@@ -99,7 +99,7 @@ class MazeGenerator:
         # generate maze structure
         self.generate_maze()
 
-    def get_cell(self, x: int, y: int) -> Cell | None:
+    def get_cell(self, x: int, y: int) -> Optional[Cell]:
         """Get cell at (x, y), return None if out of borders."""
         if 0 <= x < self.cols and 0 <= y < self.rows:
             return self.grid[y][x]
@@ -288,7 +288,7 @@ class MazeGenerator:
 
         if removed == 0:
             for cell in dead_ends:
-                if removed == 1:
+                if removed >= 1:
                     break
                 for direction, binary in cell.walls.items():
                     if binary == 0:

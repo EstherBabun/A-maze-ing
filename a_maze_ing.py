@@ -34,14 +34,15 @@ def main() -> None:
         maze = MazeGenerator(config_file)
     else:
         print("Usage: python3 a_maze_ing.py config_file(optional)")
+        return
 
     # launch selected display mode
     if maze.display == "ascii":
         from ascii_renderer import AsciiRenderer
-        ascii_d = AsciiRenderer(maze)
+        AsciiRenderer(maze)
     elif maze.display == "mlx":
         from mlx_renderer import MlxRenderer
-        mlx_d = MlxRenderer(maze)
+        MlxRenderer(maze)
 
 
 if __name__ == "__main__":
