@@ -5,10 +5,11 @@
 # Created: 2026/01/23 16:09:10
 # Updated: 2026/01/28 16:09:10
 
+from maze_renderer import MazeRenderer
 from maze_generator import MazeGenerator
 
 
-class AsciiRenderer:
+class AsciiRenderer(MazeRenderer):
     """
     Render a maze in the terminal using ASCII characters.
     """
@@ -20,9 +21,10 @@ class AsciiRenderer:
         Args:
             config (str): Name of the configuration file.
         """
-        self.maze = maze
-        self.maze_hex: str = maze.hex_repr
-        self.display_ascii()
+        super().__init__(maze)
+        self.wall_colors = ["\033[27m", "\033[33m", "\033[32m", "\033[36m"]
+        self.color_idx: int = 0
+        self.handle_user_interaction()
 
     @staticmethod
     def show_menu() -> None:
@@ -55,23 +57,10 @@ class AsciiRenderer:
         Generate a new maze with the same configuration and display it.
         """
         new_maze: MazeGenerator = MazeGenerator(self.maze._config_file)
-        AsciiRenderer(new_maze)
-
-    def coordinates_path(self) -> list[tuple[int, int]]:
-        """
-        Convert the hexadecimal path into coordinates.
-
-        Returns:
-            list[tuple[int, int]]: Coordinates of the shortest solution path.
-        """
-        path = []
-        cx, cy = self.maze.entry
-        for direction in self.maze.path:
-            x, y = MazeGenerator.offset[direction]
-            cx += x
-            cy += y
-            path.append((cx, cy))
-        return path
+        if new_maze.display != "ascii":
+            print(f"Error: exit program to switch to {new_maze.display} display")
+        super().__init__(new_maze)
+        self.handle_user_interaction()
 
     def display_maze(self, display_path: bool, wall_color: str) -> None:
         """
@@ -82,7 +71,6 @@ class AsciiRenderer:
             wall_color (str): ANSI color code for the maze walls.
         """
         acc_line = 0
-        coordinates_path = self.coordinates_path()
         end_color = "\033[0m"
         line_top_border = (
             f"{wall_color}+{end_color}"
@@ -101,7 +89,7 @@ class AsciiRenderer:
                     cell_content = "\033[31m■\033[0m"
                 elif hexa == "F":
                     cell_content = "■"
-                elif display_path and (acc_hexa, acc_line) in coordinates_path:
+                elif display_path and (acc_hexa, acc_line) in self.path_coord:
                     cell_content = "\033[35m■\033[0m"
                 else:
                     cell_content = " "
@@ -125,20 +113,18 @@ class AsciiRenderer:
             print(line_bottom)
             acc_line += 1
 
-    def display_ascii(self) -> None:
+    def handle_user_interaction(self) -> None:
         """
         Display the maze and handle user interactions.
         """
         show_path = False
-        wall_colors = ["\033[27m", "\033[33m", "\033[32m", "\033[36m"]
-        acc_color = 0
 
         # clear and right placement (left corner)
         print("\033[2J")
         print("\033[H")
         print("Scroll up for configuration and errors feedback")
         while True:
-            wall_color = wall_colors[acc_color % 4]
+            wall_color = self.wall_colors[self.color_idx % 4]
             if show_path:
                 self.display_maze(True, wall_color)
             else:
@@ -162,7 +148,7 @@ class AsciiRenderer:
             elif choice == '3':
                 print("\033[2J")
                 print("\033[H")
-                acc_color += 1
+                self.color_idx += 1
             elif choice == '4':
                 print("Bye! Thanks for playing ~")
                 break

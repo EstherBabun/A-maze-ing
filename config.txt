@@ -1,0 +1,4 @@
+display=mlx
+perfect=No
+width=11
+height=15
