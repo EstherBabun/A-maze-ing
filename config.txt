@@ -1,4 +1,6 @@
+width=15
+height=12
+entry=87,876
 display=mlx
+output_file=folder/maze
 perfect=No
-width=11
-height=15

@@ -13,8 +13,8 @@ common functionality shared between ASCII and MLX renderers.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
-from maze_generator import MazeGenerator
+from cell import Cell
+from maze_generator import MazeGenerator, OFFSET
 
 
 class MazeRenderer(ABC):
@@ -41,25 +41,25 @@ class MazeRenderer(ABC):
         self.maze: MazeGenerator = maze
         self.maze_hex: str = maze.hex_repr
         self.show_soluce: bool = False
-        self.path_coord: List[Tuple[int, int]] = []
+        self.path_coord: list[tuple[int, int]] = []
         self.set_path_coord()
         # remove exit form soluce path for mlx renderer
-        self.soluce_path: List[Tuple[int, int]] = self.path_coord[:-1]
+        self.soluce_path: list[tuple[int, int]] = self.path_coord[:-1]
         # reset current cell for navigation in mlx renderer
-        self.current_cell = self.maze.entry_cell
-        self.navigation_path = [self.maze.entry]
+        self.current_cell: Cell | None = self.maze.entry_cell
+        self.navigation_path: list[tuple[int, int]] = [self.maze.entry]
 
-    def set_path_coord(self) -> List[Tuple[int, int]]:
+    def set_path_coord(self) -> None:
         """
         Convert the string solution path into coordinates.
 
-        Returns:
-            list[tuple[int, int]]: Coordinates of the shortest solution path.
+        Populates the self.path_coord attribute with the coordinate sequence
+        representing the shortest path from entry to exit.
         """
-        path: List[Tuple[int, int]] = []
+        path: list[tuple[int, int]] = []
         cx, cy = self.maze.entry
         for direction in self.maze.path:
-            x, y = MazeGenerator.offset[direction]
+            x, y = OFFSET[direction]
             cx += x
             cy += y
             path.append((cx, cy))
@@ -68,7 +68,7 @@ class MazeRenderer(ABC):
     @abstractmethod
     def new_maze(self) -> None:
         """Generate a new maze (to be implemented by subclasses)."""
-        pass
+        ...
 
     @abstractmethod
     def display_maze(self) -> None:
@@ -77,7 +77,7 @@ class MazeRenderer(ABC):
 
         Each renderer has its own display method.
         """
-        pass
+        ...
 
     @abstractmethod
     def handle_user_interaction(self) -> None:
@@ -86,4 +86,4 @@ class MazeRenderer(ABC):
 
         Each renderer has its own interaction handling.
         """
-        pass
+        ...

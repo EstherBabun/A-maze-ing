@@ -9,9 +9,9 @@
 from maze_renderer import MazeRenderer
 from cell import Cell
 from maze_generator import MazeGenerator
-from mlx import Mlx
-from typing import List, Tuple, Dict
-from ctypes import c_void_p, POINTER, c_char
+from mlx import Mlx  # type: ignore[import-untyped]
+from typing import Any
+from ctypes import c_void_p
 
 
 class MlxRenderer(MazeRenderer):
@@ -45,7 +45,7 @@ class MlxRenderer(MazeRenderer):
 
             win_ptr (c_void_p): Window identifier
             img_ptr (c_void_p): Image identifier
-            img_data (Tuple(POINTER(c_char), int, int, int): the image data
+            img_data (tuple(POINTER(c_char), int, int, int): the image data
         """
         # Initialize parent class (sets maze related attributes)
         super().__init__(maze)
@@ -59,40 +59,40 @@ class MlxRenderer(MazeRenderer):
         self.screen_h: int = 0
         self.window_w: int = 0
         self.window_h: int = 0
-        self.margin: Tuple[str, int] = ("", 0)
+        self.margin: tuple[str, int] = ("", 0)
         self.cell_size: int = 30
         self.wall_thickness: int = 3
         self.img_w: int = 0
         self.img_h: int = 0
         self.win_ptr: c_void_p
         self.img_ptr: c_void_p
-        self.img_data: Tuple[POINTER(c_char), int, int, int]
+        self.img_data: Any
 
         # colors and color counter
-        green: Dict[str, int] = {
+        green: dict[str, int] = {
                 "wall": 0x00CC00,
                 "path": 0x106050
                 }
-        cyan: Dict[str, int] = {
+        cyan: dict[str, int] = {
                 "wall": 0x00ECFF,
                 "path": 0x156055
                 }
-        pink: Dict[str, int] = {
+        pink: dict[str, int] = {
                 "wall": 0xFF15F0,
                 "path": 0x850065
                 }
-        red: Dict[str, int] = {
+        red: dict[str, int] = {
                 "wall": 0xFF0020,
                 "path": 0x700550
                 }
-        orange: Dict[str, int] = {
+        orange: dict[str, int] = {
                 "wall": 0xFF7F50,
                 "path": 0x852520
                 }
-        self.color_palettes: List[Dict[str, int]] = [
+        self.color_palettes: list[dict[str, int]] = [
                 green, cyan, pink, orange, red
                 ]
-        self.palette_names: List[str] = [
+        self.palette_names: list[str] = [
                 "green", "cyan", "pink", "orange", "red"
                 ]
         self.color_idx: int = 0
@@ -106,12 +106,12 @@ class MlxRenderer(MazeRenderer):
         # execute rendering operations
         self.display_maze()
 
-    def new_maze(self) -> bool:
+    def new_maze(self) -> None:
         """Create maze instance and initialize maze data."""
         new_maze = MazeGenerator(self.maze._config_file)
         if new_maze.display != "mlx":
             print(
-                    "Error: exit program to switch "
+                    "Info: exit program to switch "
                     f"to {new_maze.display} display"
                     )
         super().__init__(new_maze)
@@ -291,7 +291,7 @@ class MlxRenderer(MazeRenderer):
 
     def draw_walls(self, x: int, y: int) -> None:
         """Draw all walls of the given cell."""
-        cell: Cell = self.maze.get_cell(x, y)
+        cell: Cell | None = self.maze.get_cell(x, y)
         if cell is not None:
             if cell.walls["W"] == 1:
                 self.draw_west_wall(x, y, self.color_wall)
@@ -314,7 +314,7 @@ class MlxRenderer(MazeRenderer):
         elif (x, y) == self.maze.exit:
             self.draw(start_x, end_x, start_y, end_y, self.YELLOW)
 
-    def create_image(self):
+    def create_image(self) -> None:
         """Create original maze image."""
         # Draw cases
         for row in self.maze.grid:
@@ -390,11 +390,11 @@ class MlxRenderer(MazeRenderer):
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
-    def navigate(self, direction) -> None:
+    def navigate(self, direction: str) -> None:
         """Navigate in the maze, coloring cell in given direction."""
         current = self.current_cell
         next_cell = self.maze.get_neighbor(current, direction)
-        if next_cell is not None and current.walls[direction] == 0:
+        if next_cell and current and current.walls[direction] == 0:
             x, y = next_cell.coord
             if next_cell.coord == self.maze.exit:
                 return
@@ -423,11 +423,11 @@ class MlxRenderer(MazeRenderer):
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
-    def mykey(self, keynum, param):
+    def mykey(self, keynum: int, param: Any) -> None:
         """Record key events and trigger associated method."""
         # debug
         # print(f"Got keynum {keynum}")
-        navigation: Dict[str, int] = {
+        navigation: dict[int, str] = {
                 65361: "W",
                 65364: "S",
                 65363: "E",
@@ -478,7 +478,7 @@ class MlxRenderer(MazeRenderer):
             print("Bye! Thanks for playing ~")
             self.gere_close(None)
 
-    def gere_close(self, dummy):
+    def gere_close(self, dummy) -> None:
         """Close window with close button."""
         self.m.mlx_loop_exit(self.ptr)
 

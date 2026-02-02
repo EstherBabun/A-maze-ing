@@ -34,11 +34,7 @@ class MazeParser:
         display (str): Display mode (ASCII or MLX)
     """
 
-    def __init__(
-            self,
-            config_file: Optional[str] = None,
-            quiet: Optional[bool] = False
-            ) -> None:
+    def __init__(self, config_file: str | None = None) -> None:
         """
         Initialize the parser with default values.
 
@@ -46,9 +42,6 @@ class MazeParser:
             config_file (str | None): Path to configuration file,
                                      or None for defaults
         """
-        # set boolean to silence output
-        self.quiet: bool = quiet
-
         # Set defaults first (exactly like original MazeGenerator)
         self._config_file = config_file
         self.cols: int = 20
@@ -82,8 +75,7 @@ class MazeParser:
         self._validate_entry_exit()
 
         # print the final, validated configuration
-        if not self.quiet:
-            self._print_final_config()
+        self._print_final_config()
 
     def _load_config(self, config_file: str) -> None:
         """
@@ -96,13 +88,6 @@ class MazeParser:
         if raw_config is not None:
             self._custom_keys = self._parse_config_values(raw_config)
             self._config_loaded = True
-
-            # Adjust default exit if WIDTH/HEIGHT changed
-            # but EXIT wasn't specified
-            if (("WIDTH" in self._custom_keys
-                or "HEIGHT" in self._custom_keys)
-                    and "EXIT" not in self._custom_keys) or self.max:
-                self.exit = (self.cols - 1, self.rows - 1)
 
     def _read_config_file(self, file: str) -> Optional[Dict[str, str]]:
         """
@@ -118,12 +103,10 @@ class MazeParser:
             with open(file, "r") as f:
                 content: str = f.read()
                 if content == '':
-                    if not self.quiet:
-                        print("\nConfig file is empty")
+                    print("\nError: Config file is empty")
                     return None
 
-                if not self.quiet:
-                    print(f"\nLoading settings from config file {file}...")
+                print(f"\nLoading settings from config file {file}...")
                 raw_config: Dict[str, str] = {}
 
                 for line in content.splitlines():
@@ -134,23 +117,20 @@ class MazeParser:
                             key = key.strip().upper()
                             raw_config[key] = value.strip()
                     except ValueError:
-                        if not self.quiet:
-                            print(
-                                    f'Error in line {line} - '
-                                    f'Expected syntax: "KEY=value"'
-                                    )
+                        print(
+                                f'Error in line {line} - '
+                                f'Expected syntax: "KEY=value"'
+                                )
                         continue
             if not len(raw_config.keys()):
                 raise ValueError(f"No valid settings in {file}")
             return raw_config
 
         except (FileNotFoundError, PermissionError) as e:
-            if not self.quiet:
-                print(f"Error: {e}")
+            print(f"Error: {e}")
             return None
         except Exception as e:
-            if not self.quiet:
-                print(f"Error: {e}")
+            print(f"Error: {e}")
             return None
 
     def _parse_config_values(self, raw_config: Dict[str, str]) -> List[str]:
@@ -225,27 +205,24 @@ class MazeParser:
                         self.display = v.lower()
                     custom.append(k)
                 else:
-                    if not self.quiet:
-                        print(
-                                f"Error: Invalid keyword {k} - "
-                                "Allowed: WIDTH, HEIGHT, ENTRY, EXIT, "
-                                "OUTPUT_FILE, PERFECT, SEED, "
-                                "ALGORITHM, DISPLAY"
-                                )
+                    print(
+                            f"Error: Invalid keyword {k} - "
+                            "Allowed: WIDTH, HEIGHT, ENTRY, EXIT, "
+                            "OUTPUT_FILE, PERFECT, SEED, "
+                            "ALGORITHM, DISPLAY"
+                            )
             except Exception as e:
-                if not self.quiet:
-                    print(f'Error in {k}: {e}')
-                    if self.max and (k == "WIDTH" or k == "HEIGHT"):
-                        print(f'Enforcing max {k.lower()}')
-                    elif k == "DISPLAY":
-                        print('Aborting rendering')
-                    else:
-                        print(f'Switching to default {k.lower()}')
+                print(f'Error in {k}: {e}')
+                if self.max and (k == "WIDTH" or k == "HEIGHT"):
+                    print(f'Enforcing max {k.lower()}')
+                elif k == "DISPLAY":
+                    print('Aborting rendering')
+                else:
+                    print(f'Switching to default {k.lower()}')
 
         if self.display and not self.is_displayable:
-            if not self.quiet:
-                print(f"Error: Size is too big for {self.display} rendering")
-                print("Aborting rendering")
+            print(f"Error: Size is too big for {self.display} rendering")
+            print("Aborting rendering")
             self.display = None
             custom.remove("DISPLAY")
 
@@ -312,8 +289,7 @@ class MazeParser:
         import os
         if not value.endswith('.txt'):
             value = value + '.txt'
-            if not self.quiet:
-                print(f"Info: Added .txt extension to output file: {value}")
+            print(f"Info: Added .txt extension to output file: {value}")
         # check the directory of output_file
         directory = os.path.dirname(value) or "."
         if not os.path.isdir(directory):
@@ -379,52 +355,53 @@ class MazeParser:
 
     def _validate_entry_exit(self) -> None:
         """Validate entry/exit by checking maze bounds and 42 cells."""
+        # Adjust default exit if WIDTH/HEIGHT changed
+        # but EXIT wasn't specified
+        if "EXIT" not in self._custom_keys:
+            if ("WIDTH" in self._custom_keys
+                    or "HEIGHT" in self._custom_keys
+                    or self.max):
+                self.exit = (self.cols - 1, self.rows - 1)
+
         # Check if entry/exit coordinates are within maze bounds
         if not self._is_within_bounds(self.entry):
-            if not self.quiet:
-                print(
-                        "Error: Entry point exceeds borders of the maze.\n"
-                        'Switching to default entry'
-                        )
+            print(
+                    "Error: Entry point exceeds borders of the maze.\n"
+                    'Switching to default entry'
+                    )
             self.reset_default_entry_exit("ENTRY")
         if not self._is_within_bounds(self.exit):
-            if not self.quiet:
-                print(
-                        "Error: Exit point exceeds borders of the maze.\n"
-                        'Switching to default exit'
-                        )
+            print(
+                    "Error: Exit point exceeds borders of the maze.\n"
+                    'Switching to default exit'
+                    )
             self.reset_default_entry_exit("EXIT")
 
         # Check if entry/exit coordinates conflict with 42 blocked cells
         if self.entry in self.ft_walls:
-            if not self.quiet:
-                print(
-                        "Error: Entry point is stuck in the 42 pattern\n"
-                        "Switching to default entry"
-                        )
+            print(
+                    "Error: Entry point is stuck in the 42 pattern\n"
+                    "Switching to default entry"
+                    )
             self.reset_default_entry_exit("ENTRY")
         if self.exit in self.ft_walls:
-            if not self.quiet:
-                print(
-                        "Error: Exit point is stuck in the 42 pattern\n"
-                        "Switching to default exit"
-                        )
+            print(
+                    "Error: Exit point is stuck in the 42 pattern\n"
+                    "Switching to default exit"
+                    )
             self.reset_default_entry_exit("EXIT")
 
         if self.entry == self.exit:
-            if not self.quiet:
-                print(
-                        "Error: Entry and exit cannot have "
-                        "the same coordinates"
-                        )
+            print(
+                    "Error: Entry and exit cannot have "
+                    "the same coordinates"
+                    )
             if self.entry != (0, 0):
                 self.reset_default_entry_exit("ENTRY")
-                if not self.quiet:
-                    print("Switching to default entry")
+                print("Switching to default entry")
             if self.entry == self.exit:
                 self.reset_default_entry_exit("EXIT")
-                if not self.quiet:
-                    print("Switching to default exit")
+                print("Switching to default exit")
 
     @property
     def is_displayable(self) -> bool:

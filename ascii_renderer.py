@@ -19,11 +19,12 @@ class AsciiRenderer(MazeRenderer):
         Initialize the ASCII renderer.
 
         Args:
-            config (str): Name of the configuration file.
+            maze (MazeGenerator): The maze generator instance to render.
         """
         super().__init__(maze)
         self.wall_colors = ["\033[27m", "\033[33m", "\033[32m", "\033[36m"]
         self.color_idx: int = 0
+        self.w_col: str
         self.handle_user_interaction()
 
     @staticmethod
@@ -38,11 +39,11 @@ class AsciiRenderer(MazeRenderer):
     @staticmethod
     def get_choice() -> tuple[str, bool]:
         """
-        Prompt the user until a valid choice is entered.
+        Get the user choice and check if it's valid.
 
         Returns:
             tuple[str, bool]: The selected choice and a flag indicating
-            whether an invalid choice was previously entered.
+            whether the choice is valid.
         """
         choice = input("Choice? (1-4): ")
         if choice in ("1", "2", "3", "4"):
@@ -55,30 +56,24 @@ class AsciiRenderer(MazeRenderer):
         new_maze: MazeGenerator = MazeGenerator(self.maze._config_file)
         if new_maze.display != "ascii":
             print(
-                    "Error: exit program to switch "
+                    "Info: exit program to switch "
                     f"to {new_maze.display} display"
                     )
         super().__init__(new_maze)
         self.handle_user_interaction()
 
-    def display_maze(self, display_path: bool, wall_color: str) -> None:
-        """
-        Display the maze with walls, entry, exit, and optional solution path.
-
-        Args:
-            display_path (bool): Whether to display the solution path.
-            wall_color (str): ANSI color code for the maze walls.
-        """
+    def display_maze(self) -> None:
+        """Display the maze with entry, exit, and optional solution path."""
         acc_line = 0
         end_color = "\033[0m"
         line_top_border = (
-            f"{wall_color}+{end_color}"
-            + f"{wall_color}---+{end_color}" * self.maze.cols
+            f"{self.w_col}+{end_color}"
+            + f"{self.w_col}---+{end_color}" * self.maze.cols
         )
         print(line_top_border)
         for line in self.maze_hex[:-1].split("\n"):
-            line_walls = f"{wall_color}|{end_color}"
-            line_bottom = f"{wall_color}+{end_color}"
+            line_walls = f"{self.w_col}|{end_color}"
+            line_bottom = f"{self.w_col}+{end_color}"
             acc_hexa = 0
             for hexa in line:
                 # check the content
@@ -88,25 +83,27 @@ class AsciiRenderer(MazeRenderer):
                     cell_content = "\033[31m■\033[0m"
                 elif hexa == "F":
                     cell_content = "■"
-                elif display_path and (acc_hexa, acc_line) in self.path_coord:
+                elif (self.show_soluce
+                        and (acc_hexa, acc_line)
+                        in self.path_coord):
                     cell_content = "\033[35m■\033[0m"
                 else:
                     cell_content = " "
 
                 # construct the maze with the content
                 if hexa == "F":
-                    line_walls += f" {cell_content} {wall_color}|{end_color}"
-                    line_bottom += f"{wall_color}---+{end_color}"
+                    line_walls += f" {cell_content} {self.w_col}|{end_color}"
+                    line_bottom += f"{self.w_col}---+{end_color}"
                 else:
                     if hexa in "2367ABE":
                         line_walls += (f" {cell_content} "
-                                       f"{wall_color}|{end_color}")
+                                       f"{self.w_col}|{end_color}")
                     else:
                         line_walls += f" {cell_content}  "
                     if hexa in "4567CDE":
-                        line_bottom += f"{wall_color}---+{end_color}"
+                        line_bottom += f"{self.w_col}---+{end_color}"
                     else:
-                        line_bottom += f"   {wall_color}+{end_color}"
+                        line_bottom += f"   {self.w_col}+{end_color}"
                 acc_hexa += 1
             print(line_walls)
             print(line_bottom)
@@ -114,19 +111,13 @@ class AsciiRenderer(MazeRenderer):
 
     def handle_user_interaction(self) -> None:
         """Display the maze and handle user interactions."""
-        show_path = False
-
         # clear and right placement (left corner)
         print("\033[2J")
         print("\033[H")
         print("Scroll up for configuration and errors feedback")
         while True:
-            wall_color = self.wall_colors[self.color_idx % 4]
-            if show_path:
-                self.display_maze(True, wall_color)
-            else:
-                self.display_maze(False, wall_color)
-
+            self.w_col = self.wall_colors[self.color_idx % 4]
+            self.display_maze()
             # commands available and catch if not
             self.show_menu()
             choice, wrong = self.get_choice()
@@ -141,7 +132,7 @@ class AsciiRenderer(MazeRenderer):
             elif choice == '2':
                 print("\033[2J")
                 print("\033[H")
-                show_path = not show_path
+                self.show_soluce = not self.show_soluce
             elif choice == '3':
                 print("\033[2J")
                 print("\033[H")
