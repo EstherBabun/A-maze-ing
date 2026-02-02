@@ -6,14 +6,15 @@
 # Updated: 2026/01/22 12:35:09
 
 """Module to render a maze with mlx graphics library."""
-
+from maze_renderer import MazeRenderer
+from cell import Cell
 from maze_generator import MazeGenerator
-from mlx import Mlx
-from typing import List, Tuple, Dict, Optional
-from ctypes import c_void_p, POINTER, c_char
+from mlx import Mlx  # type: ignore[import-untyped]
+from typing import Any
+from ctypes import c_void_p
 
 
-class MlxRenderer:
+class MlxRenderer(MazeRenderer):
     """A class holding the renderer's specifications."""
 
     YELLOW = 0xFFFF00
@@ -31,18 +32,6 @@ class MlxRenderer:
             m (Mlx): Mlx instance
             ptr (c_void_p): Mlx instance pointer
 
-            maze data:
-            maze_gen (MazeGenerator): MazeGenerator instance
-            maze_w (int): width of the maze
-            maze_h (int): height of the maze
-            grid(list(list(Cell))): structure of the maze
-            entry (tuple(int)): entry coordinates
-            exit (tuple(int)): exit coordinates
-            solution (bool): flag to know if solution path is shown or hidden
-            soluce_path (list(tuple(int, int)): coordinates of the soluce path
-            current_cell (Cell): current cell of the user's navigation
-            navigation_path (list(tuple(int, int)): coordinates of navigation
-
             mlx data:
             screen_w (int): width of the screen in pixels
             screen_h (int): height of the screen in pixels
@@ -56,62 +45,54 @@ class MlxRenderer:
 
             win_ptr (c_void_p): Window identifier
             img_ptr (c_void_p): Image identifier
-            img_data (Tuple(POINTER(c_char), int, int, int): the image data
+            img_data (tuple(POINTER(c_char), int, int, int): the image data
         """
+        # Initialize parent class (sets maze related attributes)
+        super().__init__(maze)
+
         # Initialize MLX
         self.m = Mlx()
         self.ptr = self.m.mlx_init()
-
-        # Initialize maze
-        self.maze: MazeGenerator = maze
-
-        # declare attributes for solution toggling
-        self.solution: bool = False
-        self.convert_soluce_path()
-
-        # declare current coordinates and path for navigation
-        self.current_cell: Cell = self.maze.entry_cell
-        self.navigation_path: List[Tuple[int, int]] = [self.maze.entry]
 
         # declare MLX data
         self.screen_w: int = 0
         self.screen_h: int = 0
         self.window_w: int = 0
         self.window_h: int = 0
-        self.margin: Tuple[str, int] = ("", 0)
+        self.margin: tuple[str, int] = ("", 0)
         self.cell_size: int = 30
         self.wall_thickness: int = 3
         self.img_w: int = 0
         self.img_h: int = 0
         self.win_ptr: c_void_p
         self.img_ptr: c_void_p
-        self.img_data: Tuple[POINTER(c_char), int, int, int]
+        self.img_data: Any
 
         # colors and color counter
-        green: Dict[str, int] = {
+        green: dict[str, int] = {
                 "wall": 0x00CC00,
                 "path": 0x106050
                 }
-        cyan: Dict[str, int] = {
+        cyan: dict[str, int] = {
                 "wall": 0x00ECFF,
                 "path": 0x156055
                 }
-        pink: Dict[str, int] = {
+        pink: dict[str, int] = {
                 "wall": 0xFF15F0,
                 "path": 0x850065
                 }
-        red: Dict[str, int] = {
+        red: dict[str, int] = {
                 "wall": 0xFF0020,
                 "path": 0x700550
                 }
-        orange: Dict[str, int] = {
+        orange: dict[str, int] = {
                 "wall": 0xFF7F50,
                 "path": 0x852520
                 }
-        self.color_palettes: List[Dict[str, int]] = [
+        self.color_palettes: list[dict[str, int]] = [
                 green, cyan, pink, orange, red
                 ]
-        self.palette_names: List[str] = [
+        self.palette_names: list[str] = [
                 "green", "cyan", "pink", "orange", "red"
                 ]
         self.color_idx: int = 0
@@ -123,27 +104,17 @@ class MlxRenderer:
         # create and configure renderer
         self.configure_renderer()
         # execute rendering operations
-        self.display()
+        self.display_maze()
 
-    def convert_soluce_path(self) -> None:
-        """Convert directions to coordinates."""
-        soluce_path: List[Tuple[int, int]] = []
-        x, y = self.maze.entry
-        for direction in self.maze.path:
-            ox, oy = MazeGenerator.offset[direction]
-            next_coord = (x + ox, y + oy)
-            soluce_path.append(next_coord)
-            x, y = next_coord
-        self.soluce_path = soluce_path[:-1]
-
-    def create_maze(self) -> bool:
+    def new_maze(self) -> None:
         """Create maze instance and initialize maze data."""
         new_maze = MazeGenerator(self.maze._config_file)
-        self.maze = new_maze
-        self.convert_soluce_path()
-        self.solution: bool = False
-        self.current_cell = self.maze.entry_cell
-        self.navigation_path = [self.maze.entry]
+        if new_maze.display != "mlx":
+            print(
+                    "Info: exit program to switch "
+                    f"to {new_maze.display} display"
+                    )
+        super().__init__(new_maze)
 
     def set_cell_size_and_wall_thickness(self) -> None:
         """Calculate cell size according to screen and maze size."""
@@ -320,7 +291,7 @@ class MlxRenderer:
 
     def draw_walls(self, x: int, y: int) -> None:
         """Draw all walls of the given cell."""
-        cell: Cell = self.maze.get_cell(x, y)
+        cell: Cell | None = self.maze.get_cell(x, y)
         if cell is not None:
             if cell.walls["W"] == 1:
                 self.draw_west_wall(x, y, self.color_wall)
@@ -343,7 +314,7 @@ class MlxRenderer:
         elif (x, y) == self.maze.exit:
             self.draw(start_x, end_x, start_y, end_y, self.YELLOW)
 
-    def create_image(self):
+    def create_image(self) -> None:
         """Create original maze image."""
         # Draw cases
         for row in self.maze.grid:
@@ -352,7 +323,7 @@ class MlxRenderer:
                 # draw cells
                 if cell._is_42:
                     self.draw_cell(x, y, self.color_wall)
-                elif self.solution:
+                elif self.show_soluce:
                     if (x, y) in self.soluce_path:
                         self.draw_cell(x, y, self.color_path)
                 else:
@@ -375,7 +346,7 @@ class MlxRenderer:
                 x, y = cell.coord
                 if (x, y) in self.soluce_path:
                     self.draw_cell(x, y, color)
-                    if not self.solution and (x, y) in self.navigation_path:
+                    if not self.show_soluce and (x, y) in self.navigation_path:
                         self.draw_cell(x, y, self.color_cursor)
                     self.draw_walls(x, y)
 
@@ -388,9 +359,10 @@ class MlxRenderer:
         for row in self.maze.grid:
             for cell in row:
                 x, y = cell.coord
-                if (x, y) in self.navigation_path and (x, y) != self.maze.entry:
+                if ((x, y) in self.navigation_path and
+                        (x, y) != self.maze.entry):
                     self.draw_cell(x, y, self.color_cursor)
-                if self.solution and (x, y) in self.soluce_path:
+                if self.show_soluce and (x, y) in self.soluce_path:
                     self.draw_cell(x, y, self.color_path)
                 if cell._is_42:
                     self.draw_cell(x, y, self.color_wall)
@@ -404,10 +376,10 @@ class MlxRenderer:
         """Delete the entire navigation path."""
         for (x, y) in self.navigation_path:
             if (x, y) != self.maze.entry:
-                if self.solution and (x, y) not in self.soluce_path:
+                if self.show_soluce and (x, y) not in self.soluce_path:
                     self.draw_cell(x, y, self.color_bg)
                     self.draw_walls(x, y)
-                elif not self.solution:
+                elif not self.show_soluce:
                     self.draw_cell(x, y, self.color_bg)
                     self.draw_walls(x, y)
         # reset starting point and navigation path
@@ -418,11 +390,11 @@ class MlxRenderer:
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
-    def navigate(self, direction) -> None:
+    def navigate(self, direction: str) -> None:
         """Navigate in the maze, coloring cell in given direction."""
         current = self.current_cell
         next_cell = self.maze.get_neighbor(current, direction)
-        if next_cell is not None and current.walls[direction] == 0:
+        if next_cell and current and current.walls[direction] == 0:
             x, y = next_cell.coord
             if next_cell.coord == self.maze.exit:
                 return
@@ -431,7 +403,7 @@ class MlxRenderer:
                 to_delete = self.navigation_path[idx + 1:]
                 self.navigation_path = self.navigation_path[:idx + 1]
                 for (dx, dy) in to_delete:
-                    if self.solution and (dx, dy) in self.soluce_path:
+                    if self.show_soluce and (dx, dy) in self.soluce_path:
                         self.draw_cell(dx, dy, self.color_path)
                     else:
                         self.draw_cell(dx, dy, self.color_bg)
@@ -439,7 +411,7 @@ class MlxRenderer:
                         self.draw_entry_exit(x, y,)
                     self.draw_walls(dx, dy)
             else:
-                if self.solution and (x, y) in self.soluce_path:
+                if self.show_soluce and (x, y) in self.soluce_path:
                     self.draw_cell(x, y, self.color_path)
                 else:
                     self.draw_cell(x, y, self.color_cursor)
@@ -451,11 +423,11 @@ class MlxRenderer:
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
-    def mykey(self, keynum, param):
+    def mykey(self, keynum: int, param: Any) -> None:
         """Record key events and trigger associated method."""
         # debug
         # print(f"Got keynum {keynum}")
-        navigation: Dict[str, int] = {
+        navigation: dict[int, str] = {
                 65361: "W",
                 65364: "S",
                 65363: "E",
@@ -464,8 +436,8 @@ class MlxRenderer:
 
         # s key -> toggle solution
         if keynum == 115:
-            self.solution = not self.solution
-            if self.solution:
+            self.show_soluce = not self.show_soluce
+            if self.show_soluce:
                 print("Showing solution")
                 self.toggle_solution(self.color_path)
             else:
@@ -490,10 +462,10 @@ class MlxRenderer:
             self.m.mlx_destroy_window(self.ptr, self.win_ptr)
             self.m.mlx_loop_exit(self.ptr)
             # create new maze
-            self.create_maze()
+            self.new_maze()
             # configure and launch renderer
             self.configure_renderer()
-            self.display()
+            self.display_maze()
 
         # arrow keys -> create navigation path
         elif keynum in navigation.keys():
@@ -506,15 +478,19 @@ class MlxRenderer:
             print("Bye! Thanks for playing ~")
             self.gere_close(None)
 
-    def gere_close(self, dummy):
+    def gere_close(self, dummy) -> None:
         """Close window with close button."""
         self.m.mlx_loop_exit(self.ptr)
 
-    def display(self) -> None:
+    def handle_user_interaction(self) -> None:
+        """Set series of mlx event trackers."""
+        self.m.mlx_key_hook(self.win_ptr, self.mykey, None)
+        self.m.mlx_hook(self.win_ptr, 33, 0, self.gere_close, None)
+        self.m.mlx_loop(self.ptr)
+
+    def display_maze(self) -> None:
         """Define mlx operations to display the maze."""
         self.m.mlx_clear_window(self.ptr, self.win_ptr)
         self.put_commands()
         self.create_image()
-        self.m.mlx_key_hook(self.win_ptr, self.mykey, None)
-        self.m.mlx_hook(self.win_ptr, 33, 0, self.gere_close, None)
-        self.m.mlx_loop(self.ptr)
+        self.handle_user_interaction()
