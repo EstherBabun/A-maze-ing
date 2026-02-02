@@ -73,7 +73,10 @@ class MazeParser:
             self._load_config(config_file)
 
         # store coordinates of the 42 pattern
-        self.ft_walls: List[Tuple[int,int]] = self.get_42_cells(self.cols, self.rows)
+        self.ft_walls: List[Tuple[int, int]] = self.get_42_cells(
+                self.cols,
+                self.rows
+                )
 
         # Check that entry/exit points are not stuck in 42 pattern
         self._validate_entry_exit()
@@ -81,7 +84,6 @@ class MazeParser:
         # print the final, validated configuration
         if not self.quiet:
             self._print_final_config()
-
 
     def _load_config(self, config_file: str) -> None:
         """
@@ -94,8 +96,9 @@ class MazeParser:
         if raw_config is not None:
             self._custom_keys = self._parse_config_values(raw_config)
             self._config_loaded = True
-            
-            # Adjust default exit if WIDTH/HEIGHT changed but EXIT wasn't specified
+
+            # Adjust default exit if WIDTH/HEIGHT changed
+            # but EXIT wasn't specified
             if (("WIDTH" in self._custom_keys
                 or "HEIGHT" in self._custom_keys)
                     and "EXIT" not in self._custom_keys) or self.max:
@@ -109,7 +112,7 @@ class MazeParser:
             file (str): Path to the configuration file
 
         Returns:
-            Dict[str, str] | None: Raw configuration dictionary or None on error
+            Dict[str, str] | None: Raw configuration dictionary
         """
         try:
             with open(file, "r") as f:
@@ -210,7 +213,10 @@ class MazeParser:
                     if v.upper() in ("ASCII", "MLX"):
                         module = v.lower() + "_renderer"
                         if importlib.util.find_spec(module) is None:
-                            raise ImportError(f"Rendering module '{module}' is not available")
+                            raise ImportError(
+                                    f"Rendering module '{module}'"
+                                    "is not available"
+                                    )
                     if v.upper() not in ["NONE", "ASCII", "MLX"]:
                         raise ValueError(
                             f'Invalid display "{v}" pick NONE, ASCII or MLX'
@@ -223,7 +229,8 @@ class MazeParser:
                         print(
                                 f"Error: Invalid keyword {k} - "
                                 "Allowed: WIDTH, HEIGHT, ENTRY, EXIT, "
-                                "OUTPUT_FILE, PERFECT, SEED, ALGORITHM, DISPLAY"
+                                "OUTPUT_FILE, PERFECT, SEED, "
+                                "ALGORITHM, DISPLAY"
                                 )
             except Exception as e:
                 if not self.quiet:
@@ -288,7 +295,7 @@ class MazeParser:
                 'use True/False, 1/0, Yes/No, or Y/N'
             )
 
-    def _parse_output_file(self, value:str, key: str) -> str:
+    def _parse_output_file(self, value: str, key: str) -> str:
         """
         Parse a output_file name from string.
 
@@ -322,7 +329,9 @@ class MazeParser:
         if not basename or basename == '.txt':
             raise ValueError(f'Invalid output filename: "{value}"')
         if len(basename) > 255:
-            raise ValueError(f'Filename too long: {len(basename)} chars (max 255)')
+            raise ValueError(
+                    f'Filename too long: {len(basename)} chars (max 255)'
+                    )
         return value
 
     def get_42_cells(self, w: int, h: int) -> List[tuple]:
@@ -421,7 +430,7 @@ class MazeParser:
     def is_displayable(self) -> bool:
         """
         Check if maze dimensions are compatible with rendering.
-        
+
         Returns:
             bool: True if dimensions are safe, False otherwise
         """
@@ -465,11 +474,11 @@ class MazeParser:
         print()
 
         if not self.display:
-            if self.cols > 120 and self.rows > 60: 
+            if self.cols > 120 and self.rows > 60:
                 print("Warning: Maze is quite large (be patient!)")
-            print(f"Encoding maze in {self.output_file}...") 
+            print(f"Encoding maze in {self.output_file}...")
         else:
-        # print max size warning messages
+            # print max size warning messages
             if not self.is_displayable:
                 print("Warning: Maze is too large for rendering")
                 print("Maximum displayable size: 320x150\n")

@@ -5,7 +5,7 @@
 # Created: 2026/01/20 18:33:22
 # Updated: 2026/01/28 18:02:15
 
-from typing import Dict
+"""Simple module for the cell class of a maze."""
 
 
 class Cell:
@@ -24,7 +24,6 @@ class Cell:
         self.visited: bool = False
         self._is_42: bool = False
 
-
     @property
     def hex_repr(self) -> str:
         """Convert the status of the walls to an hex representation."""
@@ -33,4 +32,3 @@ class Cell:
         # convert string from binary to decimal with int(binary_str, 2)
         # convert to hex using format specifier :X
         return f"{int(binary_str, 2):X}"
-

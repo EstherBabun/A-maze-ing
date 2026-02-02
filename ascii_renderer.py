@@ -5,14 +5,14 @@
 # Created: 2026/01/23 16:09:10
 # Updated: 2026/01/28 16:09:10
 
+"""A module to display a maze with ascii rendering."""
+
 from maze_renderer import MazeRenderer
 from maze_generator import MazeGenerator
 
 
 class AsciiRenderer(MazeRenderer):
-    """
-    Render a maze in the terminal using ASCII characters.
-    """
+    """Render a maze in the terminal using ASCII characters."""
 
     def __init__(self, maze: MazeGenerator) -> None:
         """
@@ -28,9 +28,7 @@ class AsciiRenderer(MazeRenderer):
 
     @staticmethod
     def show_menu() -> None:
-        """
-        Display the list of available commands.
-        """
+        """Display the list of available commands."""
         print("\n=== A-Maze-ing ===")
         print("1. Re-generate a new maze")
         print("2. Show/Hide path from entry to exit")
@@ -53,12 +51,13 @@ class AsciiRenderer(MazeRenderer):
             return choice, True
 
     def new_maze(self) -> None:
-        """
-        Generate a new maze with the same configuration and display it.
-        """
+        """Generate a new maze with the same configuration and display it."""
         new_maze: MazeGenerator = MazeGenerator(self.maze._config_file)
         if new_maze.display != "ascii":
-            print(f"Error: exit program to switch to {new_maze.display} display")
+            print(
+                    "Error: exit program to switch "
+                    f"to {new_maze.display} display"
+                    )
         super().__init__(new_maze)
         self.handle_user_interaction()
 
@@ -114,9 +113,7 @@ class AsciiRenderer(MazeRenderer):
             acc_line += 1
 
     def handle_user_interaction(self) -> None:
-        """
-        Display the maze and handle user interactions.
-        """
+        """Display the maze and handle user interactions."""
         show_path = False
 
         # clear and right placement (left corner)

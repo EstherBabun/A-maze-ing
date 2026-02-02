@@ -7,9 +7,10 @@
 
 """Module to render a maze with mlx graphics library."""
 from maze_renderer import MazeRenderer
+from cell import Cell
 from maze_generator import MazeGenerator
 from mlx import Mlx
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict
 from ctypes import c_void_p, POINTER, c_char
 
 
@@ -52,7 +53,6 @@ class MlxRenderer(MazeRenderer):
         # Initialize MLX
         self.m = Mlx()
         self.ptr = self.m.mlx_init()
-
 
         # declare MLX data
         self.screen_w: int = 0
@@ -110,7 +110,10 @@ class MlxRenderer(MazeRenderer):
         """Create maze instance and initialize maze data."""
         new_maze = MazeGenerator(self.maze._config_file)
         if new_maze.display != "mlx":
-            print(f"Error: exit program to switch to {new_maze.display} display")
+            print(
+                    "Error: exit program to switch "
+                    f"to {new_maze.display} display"
+                    )
         super().__init__(new_maze)
 
     def set_cell_size_and_wall_thickness(self) -> None:
@@ -356,7 +359,8 @@ class MlxRenderer(MazeRenderer):
         for row in self.maze.grid:
             for cell in row:
                 x, y = cell.coord
-                if (x, y) in self.navigation_path and (x, y) != self.maze.entry:
+                if ((x, y) in self.navigation_path and
+                        (x, y) != self.maze.entry):
                     self.draw_cell(x, y, self.color_cursor)
                 if self.show_soluce and (x, y) in self.soluce_path:
                     self.draw_cell(x, y, self.color_path)
@@ -490,4 +494,3 @@ class MlxRenderer(MazeRenderer):
         self.put_commands()
         self.create_image()
         self.handle_user_interaction()
-

@@ -121,9 +121,7 @@ class MazeGenerator:
         return self.get_cell(x + ox, y + oy)
 
     def set_visited(self, cell: Cell) -> None:
-        """
-        Mark the cell as visited and remove it from the unvisited list
-        """
+        """Mark the cell as visited and remove it from the unvisited list."""
         cell.visited = True
         self.unvisited.remove(cell)
 
@@ -158,7 +156,6 @@ class MazeGenerator:
         if neighbor:
             cell.walls[direction] = 0
             neighbor.walls[self.opposite[direction]] = 0
-
 
     def block_42_walls(self) -> None:
         """Prevent access to the 42 walls in the center of the maze."""
@@ -280,7 +277,8 @@ class MazeGenerator:
                 break
             for direction, binary in cell.walls.items():
                 if binary == 0:
-                    neighbor = self.get_neighbor(cell, self.opposite[direction])
+                    opp: str = self.opposite[direction]
+                    neighbor = self.get_neighbor(cell, opp)
                     if neighbor and not neighbor._is_42:
                         self.set_walls(cell, self.opposite[direction])
                         removed += 1
@@ -292,7 +290,8 @@ class MazeGenerator:
                     break
                 for direction, binary in cell.walls.items():
                     if binary == 0:
-                        neighbor = self.get_neighbor(cell, self.opposite[direction])
+                        opp: str = self.opposite[direction]
+                        neighbor = self.get_neighbor(cell, opp)
                         if neighbor and not neighbor._is_42:
                             self.set_walls(cell, self.opposite[direction])
                             removed += 1
@@ -382,6 +381,7 @@ class MazeGenerator:
                 f.write(self.path + "\n")
         except Exception as e:
             print(f"Error writing file: {e}")
+
 
 if __name__ == "__main__":
     import sys

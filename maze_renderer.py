@@ -20,21 +20,21 @@ from maze_generator import MazeGenerator
 class MazeRenderer(ABC):
     """
     Abstract base class for maze renderers.
-    
+
     This class contains common attributes and methods shared by
     ASCII and MLX renderers, providing a unified interface for
     maze rendering operations.
-    
+
     Attributes:
         maze (MazeGenerator): The maze generator instance
         maze_hex (str): Hexadecimal representation of the maze
         show_soluce (bool): flag to know if solution path is shown or hidden
     """
-    
+
     def __init__(self, maze: MazeGenerator) -> None:
         """
         Initialize the renderer with a maze.
-        
+
         Args:
             maze (MazeGenerator): The maze generator instance
         """
@@ -48,11 +48,11 @@ class MazeRenderer(ABC):
         # reset current cell for navigation in mlx renderer
         self.current_cell = self.maze.entry_cell
         self.navigation_path = [self.maze.entry]
-    
+
     def set_path_coord(self) -> List[Tuple[int, int]]:
         """
         Convert the string solution path into coordinates.
-        
+
         Returns:
             list[tuple[int, int]]: Coordinates of the shortest solution path.
         """
@@ -64,26 +64,26 @@ class MazeRenderer(ABC):
             cy += y
             path.append((cx, cy))
         self.path_coord = path
-    
+
     @abstractmethod
     def new_maze(self) -> None:
         """Generate a new maze (to be implemented by subclasses)."""
         pass
-    
+
     @abstractmethod
     def display_maze(self) -> None:
         """
         Display the maze (to be implemented by subclasses).
-        
+
         Each renderer has its own display method.
         """
         pass
-    
+
     @abstractmethod
     def handle_user_interaction(self) -> None:
         """
         Handle user interactions (to be implemented by subclasses).
-        
+
         Each renderer has its own interaction handling.
         """
         pass

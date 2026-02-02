@@ -13,7 +13,6 @@ appropriate maze renderer based on the configuration file.
 """
 
 import sys
-from maze_parser import MazeParser
 from maze_generator import MazeGenerator
 
 
