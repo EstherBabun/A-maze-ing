@@ -25,6 +25,9 @@ install:
 	$(PIP) install -r requirements.txt
 	unzip mlx-2.2-py3-ubuntu-any.whl -d venv/lib/python3.10/site-packages/
 
+install_test:
+	$(PIP) install -U pytest
+
 debug:
 	$(PYTHON_VENV) -m pdb $(MAIN) $(CONFIG)
 

@@ -138,3 +138,6 @@ The maze can be rendered directly in the terminal using ASCII characters.
 
 - ANSI color codes:
   https://talyian.github.io/ansicolors/
+
+- Pytest Documentation:
+  https://docs.pytest.org/en/stable/getting-started.html
