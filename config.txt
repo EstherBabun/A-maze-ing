@@ -1,5 +1,5 @@
-width=15
-height=12
+width=2
+height=2
 entry=87,876
 display=mlx
 output_file=folder/maze

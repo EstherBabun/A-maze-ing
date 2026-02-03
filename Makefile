@@ -8,28 +8,37 @@
 PYTHON := python3
 VENV := venv
 PYTHON_VENV := $(VENV)/bin/python3
+PIP := $(VENV)/bin/pip
 
-SRC := a_maze_ing.py
-CONFIG := config.txt
+MAIN := a_maze_ing.py
+CONFIG ?= config.txt
 
 run:
-	$(PYTHON_VENV) $(SRC) $(CONFIG)
+	$(PYTHON_VENV) $(MAIN) $(CONFIG)
+
+default:
+	$(PYTHON_VENV) $(MAIN)
 
 install:
-	python3.12 -m venv venv
-	$(PYTHON_VENV) -m pip install -r requirements.txt
+	@$(PYTHON) -c 'import sys; v=sys.version_info; print(f"Python {v.major}.{v.minor}"); exit(0 if (v.major, v.minor) >= (3, 10) else 1)' || \
+		(echo "Error: Python 3.10+ required" && exit 1)
+	$(PYTHON) -m venv $(VENV)
+	$(PIP) install --upgrade pip
+	$(PIP) install -r requirements.txt
+	unzip mlx-2.2-py3-ubuntu-any.whl -d venv/lib/python3.10/site-packages/
 
 debug:
-	$(PYTHON_VENV) -m pdb $(MAIN)
+	$(PYTHON_VENV) -m pdb $(MAIN) $(CONFIG)
 
 clean:
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type d -name ".mypy_cache" -exec rm -rf {} +
-	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	@find . -type d -name "__pycache__" -exec rm -rf {} +
+	@find . -type d -name ".mypy_cache" -exec rm -rf {} +
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	@echo "✨ cache files removed 🧹"
 
 lint:
-	$(PYTHON_VENV) -m flake8 . --exclude venv ; \
-	$(PYTHON_VENV) -m mypy . --exclude venv \
+	$(PYTHON_VENV) -m flake8 . --exclude $(VENV) ; \
+	$(PYTHON_VENV) -m mypy . --exclude $(VENV) \
 		--warn-return-any \
 		--warn-unused-ignores \
 		--ignore-missing-imports \
@@ -37,7 +46,7 @@ lint:
 		--check-untyped-defs
 
 lint-strict:
-	$(PYTHON_VENV) -m flake8 .
-	$(PYTHON_VENV) -m mypy . --strict
+	$(PYTHON_VENV) -m flake8 . --exclude $(VENV) ; \
+	$(PYTHON_VENV) -m mypy . --strict --exclude $(VENV)
 
 .PHONY: install run debug clean lint lint-strict
