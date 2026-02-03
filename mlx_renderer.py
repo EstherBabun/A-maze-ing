@@ -10,7 +10,6 @@ from maze_renderer import MazeRenderer
 from cell import Cell
 from maze_generator import MazeGenerator
 from mlx import Mlx  # type: ignore[import-untyped]
-from typing import Any
 from ctypes import c_void_p
 
 
@@ -66,7 +65,7 @@ class MlxRenderer(MazeRenderer):
         self.img_h: int = 0
         self.win_ptr: c_void_p
         self.img_ptr: c_void_p
-        self.img_data: Any
+        self.img_data: tuple[memoryview, int, int, int]
 
         # colors and color counter
         green: dict[str, int] = {
@@ -228,7 +227,7 @@ class MlxRenderer(MazeRenderer):
         self.my_string_put(130, 0xFFFFFF, "r: generate new maze")
         self.my_string_put(150, 0xFFFFFF, "q: quit")
 
-    def my_mlx_pixel_put(self, x, y, color):
+    def my_mlx_pixel_put(self, x: int, y: int, color: int) -> None:
         """Fast pixel writing to image buffer."""
         data, bpp, size_line, endian = self.img_data
         if x >= 0 and y >= 0:  # Basic bounds checking
@@ -243,13 +242,20 @@ class MlxRenderer(MazeRenderer):
             data[offset + 2] = r
             data[offset + 3] = 255
 
-    def draw(self, start_x, end_x, start_y, end_y, color) -> None:
+    def draw(
+            self,
+            start_x: int,
+            end_x: int,
+            start_y: int,
+            end_y: int,
+            color: int
+            ) -> None:
         """Draw pixels in specified area."""
         for y in range(start_y, end_y):
             for x in range(start_x, end_x):
                 self.my_mlx_pixel_put(x, y, color)
 
-    def draw_cell(self, x, y, color):
+    def draw_cell(self, x: int, y: int, color: int) -> None:
         """Draw background pixels of a cell."""
         start_x = x * self.cell_size
         end_x = start_x + self.cell_size
@@ -257,7 +263,7 @@ class MlxRenderer(MazeRenderer):
         end_y = start_y + self.cell_size
         self.draw(start_x, end_x, start_y, end_y, color)
 
-    def draw_north_wall(self, x, y, color):
+    def draw_north_wall(self, x: int, y: int, color: int) -> None:
         """Draw pixels of the north wall."""
         start_x = x * self.cell_size
         end_x = start_x + self.cell_size
@@ -265,7 +271,7 @@ class MlxRenderer(MazeRenderer):
         end_y = start_y + self.wall_thickness
         self.draw(start_x, end_x, start_y, end_y, color)
 
-    def draw_south_wall(self, x, y, color):
+    def draw_south_wall(self, x: int, y: int, color: int) -> None:
         """Draw pixels of the south wall."""
         start_x = x * self.cell_size
         end_x = start_x + self.cell_size
@@ -273,7 +279,7 @@ class MlxRenderer(MazeRenderer):
         start_y = end_y - self.wall_thickness
         self.draw(start_x, end_x, start_y, end_y, color)
 
-    def draw_east_wall(self, x, y, color):
+    def draw_east_wall(self, x: int, y: int, color: int) -> None:
         """Draw pixels of the east wall."""
         end_x = x * self.cell_size + self.cell_size
         start_x = end_x - self.wall_thickness
@@ -281,7 +287,7 @@ class MlxRenderer(MazeRenderer):
         end_y = start_y + self.cell_size
         self.draw(start_x, end_x, start_y, end_y, color)
 
-    def draw_west_wall(self, x, y, color):
+    def draw_west_wall(self, x: int, y: int, color: int) -> None:
         """Draw pixels of the west wall."""
         start_x = x * self.cell_size
         end_x = start_x + self.wall_thickness
@@ -302,7 +308,7 @@ class MlxRenderer(MazeRenderer):
             if cell.walls["N"] == 1:
                 self.draw_north_wall(x, y, self.color_wall)
 
-    def draw_entry_exit(self, x, y) -> None:
+    def draw_entry_exit(self, x: int, y: int) -> None:
         """Draw entry square or exit square."""
         fraction: int = self.cell_size // 3
         start_x = x * self.cell_size + fraction
@@ -338,7 +344,7 @@ class MlxRenderer(MazeRenderer):
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
-    def toggle_solution(self, color) -> None:
+    def toggle_solution(self, color: int) -> None:
         """Toggle solution path on and off."""
         # Draw(COLOR_PATH) or erase(COLOR_BG) solution
         for row in self.maze.grid:
@@ -423,7 +429,7 @@ class MlxRenderer(MazeRenderer):
         self.m.mlx_put_image_to_window(
             self.ptr, self.win_ptr, self.img_ptr, 0, 0)
 
-    def mykey(self, keynum: int, param: Any) -> None:
+    def mykey(self, keynum: int, param: None) -> None:
         """Record key events and trigger associated method."""
         # debug
         # print(f"Got keynum {keynum}")
@@ -478,7 +484,7 @@ class MlxRenderer(MazeRenderer):
             print("Bye! Thanks for playing ~")
             self.gere_close(None)
 
-    def gere_close(self, dummy) -> None:
+    def gere_close(self, dummy: None) -> None:
         """Close window with close button."""
         self.m.mlx_loop_exit(self.ptr)
 
