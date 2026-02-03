@@ -284,7 +284,10 @@ class MazeGenerator:
                 else:
                     break
 
-    def get_walled_neighbors(self, cell: Cell) -> list[tuple]:
+    def get_walled_neighbors(
+            self,
+            cell: Cell | None
+            ) -> list[tuple[str | None, Cell | None]]:
         """
         Get all the neighbors that still have a common wall with the cell.
 
@@ -299,7 +302,7 @@ class MazeGenerator:
         walled: list[tuple[str | None, Cell | None]] = []
         for neighbor in neighbors:
             direction = self.get_direction(cell, neighbor)
-            if cell.walls[direction] == 1:
+            if cell and cell.walls[direction] == 1:
                 walled.append((direction, neighbor))
         return walled
 
@@ -369,7 +372,7 @@ class MazeGenerator:
         # print(f"Actually removed: {removed}")
         # print()
 
-    def bfs(self):
+    def bfs(self) -> dict[Cell | None, Cell | None]:
         """
         Breadth-first search algorithm to solve the maze.
 
@@ -383,21 +386,23 @@ class MazeGenerator:
         visited = set([self.entry_cell])
         # dict storing parent for each visited cell
         # To reach key I come from value
-        parent = {self.entry_cell: None}
+        parent: dict[Cell | None, Cell | None] = {self.entry_cell: None}
 
         while queue:
             current = queue.popleft()
             if current == self.exit_cell:
                 return parent
-            for direction, binary in current.walls.items():
-                if binary == 0:
-                    neighbor = self.get_neighbor(current, direction)
-                    if neighbor not in visited:
-                        visited.add(neighbor)
-                        queue.append(neighbor)
-                        parent[neighbor] = current
+            if current:
+                for direction, binary in current.walls.items():
+                    if binary == 0:
+                        neighbor = self.get_neighbor(current, direction)
+                        if neighbor not in visited:
+                            visited.add(neighbor)
+                            queue.append(neighbor)
+                            parent[neighbor] = current
+        return parent
 
-    def shortest_path(self, parent):
+    def shortest_path(self, parent: dict[Cell | None, Cell | None]) -> None:
         """
         Store the shortest path to exit as a maze attribute.
 
@@ -405,7 +410,7 @@ class MazeGenerator:
             parent (dict[Cell, Cell | None]): Dictionary mapping
             each cell to its parent.
         """
-        path = ""
+        path: str = ""
         current = self.exit_cell
 
         # store path starting from exit
@@ -413,7 +418,9 @@ class MazeGenerator:
             neighbor = parent[current]
             if not neighbor:
                 break
-            path += self.get_direction(neighbor, current)
+            direction: str | None = self.get_direction(neighbor, current)
+            if direction:
+                path += direction
             current = neighbor
 
         # set path attribute reversing stored path

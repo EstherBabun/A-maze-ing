@@ -310,7 +310,7 @@ class MazeParser:
                     )
         return value
 
-    def get_42_cells(self, w: int, h: int) -> List[tuple]:
+    def get_42_cells(self, w: int, h: int) -> list[tuple[int, int]]:
         """Calculate the coordinates of the 42 cells."""
         if w < 11 or h < 9:
             print("Warning: Maze too small for '42' pattern")
@@ -318,12 +318,12 @@ class MazeParser:
         cx: int = (w - 1) // 2 if w % 2 == 0 else w // 2
         cy: int = (h - 1) // 2 if h % 2 == 0 else h // 2
 
-        four_walls: List[tuple] = [
+        four_walls: list[tuple[int, int]] = [
                 (cx - 1, cy), (cx - 2, cy), (cx - 3, cy),
                 (cx - 1, cy + 1), (cx - 1, cy + 2),
                 (cx - 3, cy - 1), (cx - 3, cy - 2)
                 ]
-        two_walls: List[tuple] = [
+        two_walls: list[tuple[int, int]] = [
                 (cx + 1, cy), (cx + 2, cy), (cx + 3, cy),
                 (cx + 1, cy + 1), (cx + 1, cy + 2),
                 (cx + 3, cy - 1), (cx + 3, cy - 2),
@@ -333,7 +333,7 @@ class MazeParser:
 
         return four_walls + two_walls
 
-    def _is_within_bounds(self, coord: tuple) -> bool:
+    def _is_within_bounds(self, coord: tuple[int, int]) -> bool:
         """Check if a coordinate is within maze bounds."""
         x, y = coord
         if 0 <= x < self.cols and 0 <= y < self.rows:
