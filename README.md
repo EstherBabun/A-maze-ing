@@ -42,6 +42,49 @@ or
 ```bash
 python3 a_maze_ing.py config.txt
 ```
+#### 5. Access maze and solution
+
+The generated maze is written to a file whose name is provided by the user, or to ```maze.txt``` by default.
+
+```bash
+cat file_name.txt
+```
+
+Each line of the file contains a **hexadecimal representation** of the maze, where each character corresponds to a single cell.
+
+Each hexadecimal value encodes a 4-bit binary number describing the state of the walls of the cell, in the following order:
+
+**West – South – East – North (WSEN)**
+
+- ```1``` → wall is closed
+
+- ```0``` → wall is open
+
+```markdown
+Hex: 6 → Binary: 0110
+West: 0, South: 1, East: 1, North: 0
+```
+
+This means the south and east walls are closed.
+```markdown
+Hex: C → Binary: 1100
+West: 1, South: 1, East: 0, North: 0
+```
+
+This means the west and south walls are closed.
+
+**Solution Path**
+
+The last line of the file contains the shortest solution path from the entry cell to the exit cell.
+
+The solution is represented as a string of directions:
+
+- N → North
+- S → South
+- E → East
+- W → West
+
+Each character represents a move starting from the entry cell and leading step by step to the exit cell.
 
 
 # Technical choices and organization
