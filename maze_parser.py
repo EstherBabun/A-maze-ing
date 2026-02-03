@@ -12,8 +12,6 @@ This module provides the MazeParser class which handles reading and
 validating configuration files for maze generation.
 """
 
-from typing import Dict, List, Tuple, Optional
-
 
 class MazeParser:
     """
@@ -46,18 +44,18 @@ class MazeParser:
         self._config_file = config_file
         self.cols: int = 20
         self.rows: int = 10
-        self.seed: Optional[int] = None
+        self.seed: int | None = None
         self.perfect: bool = True
-        self.entry: Tuple[int, int] = (0, 0)
-        self.exit: Tuple[int, int] = (self.cols - 1, self.rows - 1)
+        self.entry: tuple[int, int] = (0, 0)
+        self.exit: tuple[int, int] = (self.cols - 1, self.rows - 1)
         self.output_file: str = "maze.txt"
         self.algorithm: str = "wilson"
-        self.display: Optional[str] = None
+        self.display: str | None = None
 
         # Track if max width or height have been enforced
         self.max: bool = False
         # Track which settings came from config file
-        self._custom_keys: List[str] = []
+        self._custom_keys: list[str] = []
         # Track if there was a file error
         self._config_loaded = False
 
@@ -66,7 +64,7 @@ class MazeParser:
             self._load_config(config_file)
 
         # store coordinates of the 42 pattern
-        self.ft_walls: List[Tuple[int, int]] = self.get_42_cells(
+        self.ft_walls: list[tuple[int, int]] = self.get_42_cells(
                 self.cols,
                 self.rows
                 )
@@ -89,7 +87,7 @@ class MazeParser:
             self._custom_keys = self._parse_config_values(raw_config)
             self._config_loaded = True
 
-    def _read_config_file(self, file: str) -> Optional[Dict[str, str]]:
+    def _read_config_file(self, file: str) -> dict[str, str] | None:
         """
         Read config file and return raw dict or None on error.
 
@@ -97,7 +95,7 @@ class MazeParser:
             file (str): Path to the configuration file
 
         Returns:
-            Dict[str, str] | None: Raw configuration dictionary
+            dict[str, str] | None: Raw configuration dictionary
         """
         try:
             with open(file, "r") as f:
@@ -107,7 +105,7 @@ class MazeParser:
                     return None
 
                 print(f"\nLoading settings from config file {file}...")
-                raw_config: Dict[str, str] = {}
+                raw_config: dict[str, str] = {}
 
                 for line in content.splitlines():
                     try:
@@ -133,17 +131,17 @@ class MazeParser:
             print(f"Error: {e}")
             return None
 
-    def _parse_config_values(self, raw_config: Dict[str, str]) -> List[str]:
+    def _parse_config_values(self, raw_config: dict[str, str]) -> list[str]:
         """
         Parse and validate each config value.
 
         Args:
-            raw_config (Dict[str, str]): Raw configuration key-value pairs
+            raw_config (dict[str, str]): Raw configuration key-value pairs
 
         Returns:
-            List[str]: List of successfully parsed keys
+            custom (list[str]) List of successfully parsed keys
         """
-        custom: List[str] = []
+        custom: list[str] = []
 
         for k, v in raw_config.items():
             try:
@@ -228,7 +226,7 @@ class MazeParser:
 
         return custom
 
-    def _parse_coordinate(self, value: str, key: str) -> Tuple[int, int]:
+    def _parse_coordinate(self, value: str, key: str) -> tuple[int, int]:
         """
         Parse a coordinate string 'x,y' into a tuple.
 
@@ -237,7 +235,7 @@ class MazeParser:
             key (str): Configuration key name (for error messages)
 
         Returns:
-            Tuple[int, int]: Parsed coordinates
+            coord_tuple (tuple[int, int]): Parsed coordinates
 
         Raises:
             ValueError: If coordinate format is invalid
