@@ -9,17 +9,20 @@ PYTHON := python3
 VENV := venv
 PYTHON_VENV := $(VENV)/bin/python3
 PIP := $(VENV)/bin/pip
-
 MAIN := a_maze_ing.py
+
+# flexible config name use make run CONFIG=your_config.txt
 CONFIG ?= config.txt
 
 run:
 	$(PYTHON_VENV) $(MAIN) $(CONFIG)
 
+# run program without config file (using default settings)
 default:
 	$(PYTHON_VENV) $(MAIN)
 
 install:
+	# check user's python3 version and print error if it's < 3.10
 	@$(PYTHON) -c 'import sys; v=sys.version_info; print(f"Python {v.major}.{v.minor}"); exit(0 if (v.major, v.minor) >= (3, 10) else 1)' || \
 		(echo "Error: Python 3.10+ required" && exit 1)
 	$(PYTHON) -m venv $(VENV)

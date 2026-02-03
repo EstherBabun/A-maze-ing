@@ -6,11 +6,11 @@
 # Updated: 2026/01/22 12:35:09
 
 """Module to render a maze with mlx graphics library."""
+from ctypes import c_void_p
+from mlx import Mlx  # type: ignore[import-untyped, unused-ignore]
 from maze_renderer import MazeRenderer
 from cell import Cell
 from maze_generator import MazeGenerator
-from mlx import Mlx
-from ctypes import c_void_p
 
 
 class MlxRenderer(MazeRenderer):
