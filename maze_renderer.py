@@ -13,8 +13,7 @@ common functionality shared between ASCII and MLX renderers.
 """
 
 from abc import ABC, abstractmethod
-from cell import Cell
-from maze_generator import MazeGenerator, OFFSET
+from mazegen import Cell, MazeGenerator, OFFSET
 
 
 class MazeRenderer(ABC):

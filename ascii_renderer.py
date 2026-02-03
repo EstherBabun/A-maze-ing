@@ -6,9 +6,8 @@
 # Updated: 2026/01/28 16:09:10
 
 """A module to display a maze with ascii rendering."""
-
 from maze_renderer import MazeRenderer
-from maze_generator import MazeGenerator
+from mazegen import MazeGenerator
 
 
 class AsciiRenderer(MazeRenderer):

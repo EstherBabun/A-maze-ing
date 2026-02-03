@@ -9,8 +9,7 @@
 from ctypes import c_void_p
 from mlx import Mlx  # type: ignore[import-untyped, unused-ignore]
 from maze_renderer import MazeRenderer
-from cell import Cell
-from maze_generator import MazeGenerator
+from mazegen import Cell, MazeGenerator
 
 
 class MlxRenderer(MazeRenderer):

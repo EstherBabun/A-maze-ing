@@ -9,8 +9,8 @@
 
 import random
 from collections import deque
-from cell import Cell
-from maze_parser import MazeParser
+from .cell import Cell
+from .maze_parser import MazeParser
 
 OFFSET: dict[str | None, tuple[int, int]] = {
             "N": (0, -1),

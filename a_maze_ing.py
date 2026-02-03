@@ -13,7 +13,7 @@ appropriate maze renderer based on the configuration file.
 """
 
 import sys
-from maze_generator import MazeGenerator
+from mazegen import MazeGenerator
 
 
 def main() -> None:
