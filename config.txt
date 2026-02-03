@@ -1,6 +1,6 @@
-width=2
-height=2
-entry=87,876
-display=mlx
+width=23
+height=21
+entry=1,8
+display=ascii
 output_file=folder/maze
 perfect=No

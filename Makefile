@@ -6,6 +6,7 @@
 # Updated: 2026/01/20 16:09:10
 
 PYTHON := python3
+VERSION := $(shell $(PYTHON) -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 VENV := venv
 PYTHON_VENV := $(VENV)/bin/python3
 PIP := $(VENV)/bin/pip
@@ -28,7 +29,7 @@ install:
 	$(PYTHON) -m venv $(VENV)
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
-	unzip mlx-2.2-py3-ubuntu-any.whl -d venv/lib/python3.10/site-packages/
+	unzip mlx-2.2-py3-ubuntu-any.whl -d venv/lib/python$(VERSION)/site-packages/
 
 debug:
 	$(PYTHON_VENV) -m pdb $(MAIN) $(CONFIG)
