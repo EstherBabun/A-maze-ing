@@ -10,14 +10,14 @@ VENV := venv
 PYTHON_VENV := $(VENV)/bin/python3
 PIP := $(VENV)/bin/pip
 
-SRC := a_maze_ing.py
-CONFIG := config.txt
+MAIN := a_maze_ing.py
+CONFIG ?= config.txt
 
 run:
-	$(PYTHON_VENV) $(SRC) $(CONFIG)
+	$(PYTHON_VENV) $(MAIN) $(CONFIG)
 
 default:
-	$(PYTHON_VENV) $(SRC)
+	$(PYTHON_VENV) $(MAIN)
 
 install:
 	$(PYTHON) -m venv $(VENV)
@@ -26,12 +26,12 @@ install:
 	unzip mlx-2.2-py3-ubuntu-any.whl -d venv/lib/python3.10/site-packages/
 
 debug:
-	$(PYTHON_VENV) -m pdb $(MAIN)
+	$(PYTHON_VENV) -m pdb $(MAIN) $(CONFIG)
 
 clean:
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type d -name ".mypy_cache" -exec rm -rf {} +
-	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	@find . -type d -name "__pycache__" -exec rm -rf {} +
+	@find . -type d -name ".mypy_cache" -exec rm -rf {} +
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} +
 
 lint:
 	$(PYTHON_VENV) -m flake8 . --exclude $(VENV) ; \
