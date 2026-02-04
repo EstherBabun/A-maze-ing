@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# File: maze_renderer.py
+# File: renderers/maze_renderer.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/22 12:35:09
@@ -8,7 +7,7 @@
 """Module to render a maze with mlx graphics library."""
 from ctypes import c_void_p
 from mlx import Mlx  # type: ignore[import-untyped, unused-ignore]
-from maze_renderer import MazeRenderer
+from .maze_renderer import MazeRenderer
 from mazegen import Cell, MazeGenerator
 
 

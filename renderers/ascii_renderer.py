@@ -1,12 +1,11 @@
-#!/usr/bin/env python3
-# File: ascii_renderer.py
+# File: renderers/ascii_renderer.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/23 16:09:10
 # Updated: 2026/01/28 16:09:10
 
 """A module to display a maze with ascii rendering."""
-from maze_renderer import MazeRenderer
+from .maze_renderer import MazeRenderer
 from mazegen import MazeGenerator
 
 

@@ -41,7 +41,6 @@ install:
 	$(PIP) install -r requirements.txt
 	unzip mlx-2.2-py3-ubuntu-any.whl -d venv/lib/python$(VERSION)/site-packages/
 	@printf "$(GREEN)Setup successfully completed$(NC) ✨\n"
-	@printf 'Run "make help" to see available commands\n'
 
 run:
 	$(PYTHON_VENV) $(MAIN) $(CONFIG)

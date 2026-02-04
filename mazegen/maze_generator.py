@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# File: maze_generator.py
+# File: mazegen/maze_generator.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/20 18:33:22

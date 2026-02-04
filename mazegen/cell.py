@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# File: cell.py
+# File: mazegen/cell.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/20 18:33:22

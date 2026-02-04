@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# File: maze_parser.py
+# File: mazegen/maze_parser.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/29 00:00:00
@@ -189,7 +188,7 @@ class MazeParser:
                 elif k == "DISPLAY":
                     import importlib.util
                     if v.upper() in ("ASCII", "MLX"):
-                        module = v.lower() + "_renderer"
+                        module = "renderers." + v.lower() + "_renderer"
                         if importlib.util.find_spec(module) is None:
                             raise ImportError(
                                     f"Rendering module '{module}'"

@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# File: __init__.py
+# File: mazegen/__init__.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Created: 2026/02/03 17:16:14
 # Updated: 2026/02/03 17:16:14
