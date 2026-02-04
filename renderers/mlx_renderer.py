@@ -42,7 +42,7 @@ class MlxRenderer(MazeRenderer):
 
             win_ptr (c_void_p): Window identifier
             img_ptr (c_void_p): Image identifier
-            img_data (tuple(POINTER(c_char), int, int, int): the image data
+            img_data (tuple(memoryview, int, int, int)): the image data
         """
         # Initialize parent class (sets maze related attributes)
         super().__init__(maze)
