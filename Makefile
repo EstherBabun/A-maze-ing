@@ -58,8 +58,8 @@ debug:
 	$(PYTHON_VENV) -m pdb $(MAIN) $(CONFIG)
 
 lint:
-	@$(PYTHON_VENV) -m flake8 . --exclude $(VENV) ; \
-	@$(PYTHON_VENV) -m mypy . --exclude $(VENV) \
+	$(PYTHON_VENV) -m flake8 . --exclude $(VENV) ; \
+	$(PYTHON_VENV) -m mypy . --exclude $(VENV) \
 		--warn-return-any \
 		--warn-unused-ignores \
 		--ignore-missing-imports \
@@ -67,8 +67,8 @@ lint:
 		--check-untyped-defs
 
 lint-strict:
-	@$(PYTHON_VENV) -m flake8 . --exclude $(VENV) ; \
-	@$(PYTHON_VENV) -m mypy . --strict --exclude $(VENV)
+	$(PYTHON_VENV) -m flake8 . --exclude $(VENV) ; \
+	$(PYTHON_VENV) -m mypy . --strict --exclude $(VENV)
 
 clean:
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
