@@ -14,7 +14,6 @@ appropriate maze renderer based on the configuration file.
 
 import sys
 from mazegen import MazeGenerator
-from renderers import AsciiRenderer, MlxRenderer
 
 
 def main() -> None:
@@ -38,8 +37,10 @@ def main() -> None:
 
     # launch selected display mode
     if maze.display == "ascii":
+        from renderers import AsciiRenderer
         AsciiRenderer(maze)
     elif maze.display == "mlx":
+        from renderers import MlxRenderer
         MlxRenderer(maze)
 
 
