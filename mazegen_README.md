@@ -62,7 +62,7 @@ After creating a maze, you can access:
 - `maze.grid` - 2D array of Cell objects
 - `maze.hex_repr` - Hexadecimal representation of the maze
 - `maze.get_cell(x, y)` - Get a specific cell
-- `maze.path` - Solution path as a string of directions (N/S/E/W)
+- `maze.path` - Shortest solution path as a string of directions (N/S/E/W)
 
 ## Example: Access cells
 ```python
@@ -92,7 +92,6 @@ if cell:
 
 - Morgane Meurer
 - Esther Babun
-
 
 ## License
 

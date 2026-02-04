@@ -489,17 +489,3 @@ class MazeGenerator:
                 f.write(self.path + "\n")
         except Exception as e:
             print(f"Error writing file: {e}")
-
-
-if __name__ == "__main__":
-    import sys
-    # if no config file:
-    if len(sys.argv) == 1:
-        maze = MazeGenerator()
-
-    # if config file:
-    elif len(sys.argv) == 2:
-        config_file: str = sys.argv[1]
-        maze = MazeGenerator(config_file)
-    else:
-        print("Usage: python3 a_maze_ing.py config_file(optional)")
