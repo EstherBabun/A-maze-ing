@@ -8,24 +8,26 @@ A Python library for generating and solving mazes.
 ## About this package
 
 This package creates random mazes using different algorithms (Wilson's algorithm or DFS) and finds the shortest path from entry to exit.
-<br/>
-<br/>
+
+## Package contents
+- `Cell`: Class representing a single cell in the maze grid
+- `MazeGenerator`: Main class for maze generation and solving
+- `OFFSET`: Direction offset dictionary
 <br/>
 <br/>
 
-# Installation
+## Installation
 ```bash
 $ pip install mazegen-1.0.0-py3-none-any.whl
 ```
 <br/>
-<br/>
 
-# Configuration
+## Configuration file
 
-The MazeGenerator class of the mazegen module takes a configuration file as argument (optional).\
+The MazeGenerator class of the module takes a configuration file as argument (optional).\
 **Note:** If no configuration file is provided, the default settings are applied.
 
-## Configuration File settings
+### Configuration settings
 
 | Parameter | Description | Default | Valid Options/Range | Example |
 |-----------|-------------|---------|---------------------|---------|
@@ -38,6 +40,7 @@ The MazeGenerator class of the mazegen module takes a configuration file as argu
 | OUTPUT_FILE | Path for output file | `maze.txt` | Any valid file path | `OUTPUT_FILE=maze.txt` |
 | ALGORITHM | Maze generation algorithm | `wilson` | `dfs`, `wilson` | `ALGORITHM=wilson` |
 
+**Note:** the DISPLAY setting exists but should always be absent from the config file or set to None since the mazegen module doesn't include any rendering features.
 
 ### Configuration file example
 
@@ -52,15 +55,9 @@ SEED=None
 ALGORITHM=dfs
 OUTPUT_FILE=my_maze.txt
 ```
-
-
-<br/>
 <br/>
 
-# Basic Usage
-
-
-
+## Basic Usage
 
 ### Generate a maze with default settings
 ```python
@@ -114,33 +111,107 @@ if cell:
     print(f"Cell walls: {cell.walls}")
     print(f"Hex representation: {cell.hex_repr}")
 ```
+
+ ### Check if a cell is part of the "42" pattern
+
+  The center of the maze contains a "42" pattern made of blocked cells.
+
+  ```python
+  cell = maze.get_cell(10, 5)
+  if cell and cell._is_42:
+      print("This cell is part of the 42 pattern")
+  ```
+
+
+  ### Using OFFSET to follow the solution path
+
+  The `OFFSET` dictionary maps directions to coordinate differences.
+
+  ```python
+  from mazegen import MazeGenerator, OFFSET
+
+  # OFFSET = {"N": (0, -1), "S": (0, 1), "E": (1, 0), "W": (-1, 0)}
+
+  maze = MazeGenerator()
+
+  # Follow the solution path step by step
+  x, y = maze.entry
+  print(f"Start: ({x}, {y})")
+
+  for direction in maze.path:
+      dx, dy = OFFSET[direction]
+      x, y = x + dx, y + dy
+      print(f"Move {direction} -> ({x}, {y})")
+
+  print(f"Reached exit: {(x, y) == maze.exit}")
+ ```
+
+### Wall Encoding Explanation
+
+  Each cell's walls are stored as a dictionary and can be represented as a hex digit:
+
+  ```python
+  cell.walls = {"W": 1, "S": 0, "E": 1, "N": 0}
+  #              │     │     │     └── North: open
+  #              │     │     └──────── East: wall
+  #              │     └────────────── South: open
+  #              └──────────────────── West: wall
+
+  # Binary: 1010 = 0xA
+  print(cell.hex_repr)  # "A"
+  ┌─────┬────────┬────────────────────┐
+  │ Hex │ Binary │    Walls (WSEN)    │
+  ├─────┼────────┼────────────────────┤
+  │ 0   │ 0000   │ All open           │
+  ├─────┼────────┼────────────────────┤
+  │ 5   │ 0101   │ West + East only   │
+  ├─────┼────────┼────────────────────┤
+  │ A   │ 1010   │ South + North only │
+  ├─────┼────────┼────────────────────┤
+  │ F   │ 1111   │ All closed         │
+  └─────┴────────┴────────────────────┘
+```
+
 <br/>
-<br/>
 
-# Hexadecimal Output Format
+## Hexadecimal Output Format
 
-The program produces an output file with the maze encoded in hexadecimal format.
+The MazeGenerator instanciation produces an output file with the maze encoded in hexadecimal format.
 
-## The cell and walls representation
-the maze is represented using one hex digit per cell:
+### The maze representation
+the maze is represented using one hex digit per cell.
+
+Example:
 
 ```
-Bit 0 (LSB): North wall
-Bit 1: East wall
-Bit 2: South wall
-Bit 3: West wall
+95155553955555555553B95539515553
+ABC5153C6915553D553AC297AC3C553A
+EA93C52D56C53969556C3AA943AD396E
+96AA956955556C3C39556C6A96C3AC53
+A96AA956B95553A92AD15396C53AA952
+C6BC6A93AAD1786AEC56BAC553EAAA96
+950792AAC452FC52FFF96C553A96AAC7
+ABC56C6C553EFD5057FA95556AAD2C53
+C43D515557C3FFFAFFF8451156A9057A
+95455695393A93FAFD52D16E93C6A93A
+C57953A96A86AAFEFFFC3C396C156AC2
+9556D46C3AE96C513957C3AA93AB96BA
+8539553D2A945796A8513A86AAC6AB86
+C3C69543C2A955696C7AAAA96C53AAC3
+BAD5413A96AC3D54553AAAEA953AA852
+AA9396AAC7C3A93D5546AC56C3C6A83A
+C46C6D6C5556C6C55555455554556EC6
 ```
 
-**Examples:**
-- `0` (0000) = all walls removed
-- `F` (1111) = all walls intact
-- `3` (0011) = North and East walls only
-- `A` (1010) = East and West walls only
-
-## The solution path representation
+### The solution path representation
 the solution path is a string with the series of directions taken form entry to exit (W,S,E,N)
 
-## The file structure
+example:
+```
+SSWSSENENNESSSENNEENWWNWWNEEEEESENEEEEEEEEEEESSESWWWSSE
+```
+
+### The file structure
 ```
 [Hex row]
 [Hex row]
@@ -152,20 +223,19 @@ SOLUTION_PATH_AS_DIRECTIONS
 ```
 
 **Note:** the entry coordinates are separated from the hexadecimal rows by an empty line.
-
 <br/>
 <br/>
 
-# Additional Metadata
-## Requirements
+## Additional Metadata
+### Requirements
 
 - Python 3.10 or higher
 
-## Authors
+### Authors
 
 - Morgane Meurer
 - Esther Babun
 
-## License
+### License
 
 MIT License - See LICENSE file for details.
