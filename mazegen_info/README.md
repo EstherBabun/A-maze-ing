@@ -110,40 +110,45 @@ if cell:
     print(f"Cell coordinates: {cell.coord}")
     print(f"Cell walls: {cell.walls}")
     print(f"Hex representation: {cell.hex_repr}")
+
+# Get all cells of the maze
+for row in maze.grid:
+    for cell in row:
+        print(f"Cell ({cell.coord}) walls: {cell.walls}")
 ```
 
- ### Check if a cell is part of the "42" pattern
+### Check if a cell is part of the "42" pattern
 
-  The center of the maze contains a "42" pattern made of blocked cells.
+ The center of the maze contains a "42" pattern made of blocked cells.
 
-  ```python
-  cell = maze.get_cell(10, 5)
-  if cell and cell.is_42:
-      print("This cell is part of the 42 pattern")
-  ```
+ ```python
+ cell = maze.get_cell(10, 5)
+ if cell and cell.is_42:
+     print("This cell is part of the 42 pattern")
+ ```
 
 
-  ### Using OFFSET to follow the solution path
+### Using OFFSET to follow the solution path
 
-  The `OFFSET` dictionary maps directions to coordinate differences.
+The `OFFSET` dictionary maps directions to coordinate differences.
 
-  ```python
-  from mazegen import MazeGenerator, OFFSET
+```python
+from mazegen import MazeGenerator, OFFSET
 
-  # OFFSET = {"N": (0, -1), "S": (0, 1), "E": (1, 0), "W": (-1, 0)}
+# OFFSET = {"N": (0, -1), "S": (0, 1), "E": (1, 0), "W": (-1, 0)}
 
-  maze = MazeGenerator()
+maze = MazeGenerator()
 
-  # Follow the solution path step by step
-  x, y = maze.entry
-  print(f"Start: ({x}, {y})")
+# Follow the solution path step by step
+x, y = maze.entry
+print(f"Start: ({x}, {y})")
 
-  for direction in maze.path:
-      dx, dy = OFFSET[direction]
-      x, y = x + dx, y + dy
-      print(f"Move {direction} -> ({x}, {y})")
+for direction in maze.path:
+    dx, dy = OFFSET[direction]
+    x, y = x + dx, y + dy
+    print(f"Move {direction} -> ({x}, {y})")
 
-  print(f"Reached exit: {(x, y) == maze.exit}")
+print(f"Reached exit: {(x, y) == maze.exit}")
  ```
 
 ### Wall Encoding Explanation

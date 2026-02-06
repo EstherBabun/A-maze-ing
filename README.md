@@ -424,6 +424,12 @@ Bit 3: West wall
 ## The solution path representation
 the solution path is a string with the series of directions taken form entry to exit (W,S,E,N)
 
+
+**Example:**
+```
+SSWSSENENNESSSENNEENWWNWWNEEEEESENEEEEEEEEEEESSESWWWSSE
+```
+
 ## The file structure
 ```
 [Hex row]
@@ -544,9 +550,6 @@ For detailed documentation, see `mazegen_info/README.md`.
     https://peps.python.org/pep-0518/
   - **Setuptools Documentation**\
     https://setuptools.pypa.io/en/latest/userguide/quickstart.html
-
-
-
 
 
   Code Quality
