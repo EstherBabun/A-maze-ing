@@ -24,10 +24,13 @@ OPPOSITE: dict[str | None, str | None] = {
 
 
 class MazeGenerator:
-    """A class for the maze attributes and methods.
+    """A class for the maze generation and resolution.
 
     Attributes:
-    - Attributes defined by the loaded config:
+        config_file (str | None): optional config file
+        _parser (MazeParser): MazeParser instance
+
+    - Attributes defined by the parser:
         cols (int): define the width of the maze
         rows (int): define the height of the maze
         seed (int | None): the seed passed to random
@@ -41,8 +44,8 @@ class MazeGenerator:
     - Attributes created:
         tot_size (int): the area of the maze
         path (str): solution path stored as a string of W, S, E, N directions
-        grid (list(list(Cell))): Create a Cell in every cell of the maze
-        unvisited (list(Cell)): a list of every unvisited cell without 42 block
+        grid (list(list(Cell))): Maze structure as rows of Cell objects
+        unvisited (list(Cell)): list of all unvisited cell (excluding 42 block)
         valid_cells (int): total amout of accessible cells in the maze
         entry_cell (Cell): the starting Cell
         exit_cell (Cell): the exit Cell
@@ -50,7 +53,7 @@ class MazeGenerator:
 
     def __init__(self, config_file: str | None = None) -> None:
         """
-        Initialise the maze generator with configuration.
+        Initialise the maze generator with the parsed configuration.
 
         Args:
             config_file (str | None): Path to configuration file,
@@ -61,7 +64,7 @@ class MazeGenerator:
 
         # Store parser for later use
         self._parser: MazeParser = parser
-        self._config_file: str | None = config_file
+        self.config_file: str | None = config_file
 
         # Set configuration attributes directly from parser
         self.cols: int = parser.cols
@@ -88,7 +91,7 @@ class MazeGenerator:
 
         self.unvisited: list[Cell] = [
             cell for row in self.grid
-            for cell in row if not cell._is_42
+            for cell in row if not cell.is_42
             ]
         # save to total amout of valid cells
         self.valid_cells: int = len(self.unvisited)
@@ -101,7 +104,7 @@ class MazeGenerator:
         self.generate_maze()
 
     def get_cell(self, x: int, y: int) -> Cell | None:
-        """Get cell at (x, y), return None if out of borders."""
+        """Get cell at (x, y), return None if out of bounds."""
         if 0 <= x < self.cols and 0 <= y < self.rows:
             return self.grid[y][x]
         return None
@@ -174,7 +177,7 @@ class MazeGenerator:
     def block_42_walls(self) -> None:
         """Mark cells in 42 pattern as inaccessible."""
         for x, y in self._parser.ft_walls:
-            self.grid[y][x]._is_42 = True
+            self.grid[y][x].is_42 = True
 
     def get_neighbors_cells(self, cell: Cell | None) -> list[Cell | None]:
         """
@@ -191,19 +194,12 @@ class MazeGenerator:
             x, y = cell.coord
         for direction, (ox, oy) in OFFSET.items():
             neighbor: Cell | None = self.get_cell(x + ox, y + oy)
-            if neighbor and not neighbor._is_42:
+            if neighbor and not neighbor.is_42:
                 neighbors.append(neighbor)
         return neighbors
 
     def wilson(self) -> None:
-        """
-        Generate a uniform random maze using Wilson's algorithm.
-
-        Wilson's algorithm creates unbiased random spanning trees
-        by performing loop-erased random walks from unvisited cells
-        until they reach the existing tree.
-        This guarantees all possible mazes have equal probability.
-        """
+        """Generate a uniform random maze using Wilson's algorithm."""
         # Premier îlot du labyrinthe
         if self.entry_cell:
             self.set_visited(self.entry_cell)
@@ -259,8 +255,8 @@ class MazeGenerator:
             current = self.get_neighbor(current, direction)
         return path
 
-    def _iter_dfs(self) -> None:
-        """Apply iterative DFS algo."""
+    def iter_dfs(self) -> None:
+        """Generate a random maze using Depth-First Search algorithm."""
         stack: list[Cell] = []
         current: Cell | None = self.entry_cell
         self.set_visited(current)
@@ -317,7 +313,7 @@ class MazeGenerator:
         for row in self.grid:
             for cell in row:
                 x, y = cell.coord
-                if cell._is_42:
+                if cell.is_42:
                     continue
                 wall_count = sum(cell.walls.values())
                 if wall_count == 3:
@@ -345,7 +341,7 @@ class MazeGenerator:
             for direction, binary in cell.walls.items():
                 if binary == 0:
                     neighbor = self.get_neighbor(cell, OPPOSITE[direction])
-                    if neighbor and not neighbor._is_42:
+                    if neighbor and not neighbor.is_42:
                         self.set_walls(cell, OPPOSITE[direction])
                         removed += 1
                         break
@@ -357,7 +353,7 @@ class MazeGenerator:
                 for direction, binary in cell.walls.items():
                     if binary == 0:
                         neighbor = self.get_neighbor(cell, OPPOSITE[direction])
-                        if neighbor and not neighbor._is_42:
+                        if neighbor and not neighbor.is_42:
                             self.set_walls(cell, OPPOSITE[direction])
                             removed += 1
                             break
@@ -437,7 +433,7 @@ class MazeGenerator:
 
         # select algo
         if self.algorithm == "dfs":
-            self._iter_dfs()
+            self.iter_dfs()
         else:
             self.wilson()
 

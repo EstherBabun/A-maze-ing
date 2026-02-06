@@ -11,7 +11,7 @@ HEIGHT=17
 ENTRY=1,1
 
 # maze exit coordinates [default: (width - 1, height - 1) - pick coordinates within maze bounds]
-EXIT=30,16
+EXIT=30,15
 
 # maze is perfect or imperfect [default: True - pick True/False, 1/0, Yes/No, Y/N]
 PERFECT=False

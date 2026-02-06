@@ -118,7 +118,7 @@ if cell:
 
   ```python
   cell = maze.get_cell(10, 5)
-  if cell and cell._is_42:
+  if cell and cell.is_42:
       print("This cell is part of the 42 pattern")
   ```
 
@@ -170,6 +170,39 @@ if cell:
   ├─────┼────────┼────────────────────┤
   │ F   │ 1111   │ All closed         │
   └─────┴────────┴────────────────────┘
+```
+
+<br/>
+
+## Further help on the modules and methods
+
+To access modules and methods inner documentation.
+
+- use the help() function.
+
+Example:
+
+```python
+>>> from mazegen import MazeGenerator, Cell, OFFSET
+
+# help for an entire class
+>>> help(MazeGenerator)
+
+# help for a specific method
+>>> help(MazeGenerator.export_to_txt)
+```
+
+- use the \__doc__ attribute.
+
+Example:
+```python
+>>> from mazegen import MazeGenerator, Cell, OFFSET
+
+# short documentation of a class
+>>> print(MazeGenerator.__doc__)
+
+# short documentation of a method
+>>> print(MazeGenerator.export_to_txt.__doc__)
 ```
 
 <br/>

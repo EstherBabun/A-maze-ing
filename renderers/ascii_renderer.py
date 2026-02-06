@@ -17,7 +17,7 @@ class AsciiRenderer(MazeRenderer):
         Initialize the ASCII renderer.
 
         Args:
-            maze (MazeGenerator): The maze generator instance to render.
+            maze (MazeGenerator): The MazeGenerator instance to render.
         """
         super().__init__(maze)
         self.wall_colors = ["\033[27m", "\033[33m", "\033[32m", "\033[36m"]
@@ -51,7 +51,7 @@ class AsciiRenderer(MazeRenderer):
 
     def new_maze(self) -> None:
         """Generate a new maze with the same configuration and display it."""
-        new_maze: MazeGenerator = MazeGenerator(self.maze._config_file)
+        new_maze: MazeGenerator = MazeGenerator(self.maze.config_file)
         if new_maze.display != "ascii":
             print(
                     "Info: exit program to switch "

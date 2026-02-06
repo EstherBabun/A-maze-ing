@@ -27,8 +27,8 @@ class MazeParser:
         entry (tuple): Entry coordinates (x, y)
         exit (tuple): Exit coordinates (x, y)
         output_file (str): Name of the output file
-        algorithm (str): Maze generation algorithm (DFS or WILSON)
-        display (str): Display mode (ASCII or MLX)
+        algorithm (str): Maze generation algorithm (dfs or wilson)
+        display (str): Display mode (None, ascii or mlx)
     """
 
     def __init__(self, config_file: str | None = None) -> None:
@@ -40,7 +40,7 @@ class MazeParser:
                                      or None for defaults
         """
         # Set defaults first (exactly like original MazeGenerator)
-        self._config_file = config_file
+        self.config_file = config_file
         self.cols: int = 20
         self.rows: int = 10
         self.seed: int | None = None
@@ -68,7 +68,7 @@ class MazeParser:
                 self.rows
                 )
 
-        # Check that entry/exit points are not stuck in 42 pattern
+        # Check that entry/exit points are valid
         self._validate_entry_exit()
 
         # print the final, validated configuration
@@ -417,7 +417,7 @@ class MazeParser:
         This is called AFTER entry/exit validation to ensure the printed
         values reflect the actual configuration that will be used.
         """
-        if self._config_file is None:
+        if self.config_file is None:
             print("No config file, switching to default settings.")
         elif not self._config_loaded:
             print("Switching to default settings")
