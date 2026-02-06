@@ -7,5 +7,11 @@
 # Virtual environment
 **/venv/
 
+# package building artefact
+*.egg-info/
+
 # macOS metadata
 .DS_Store
+
+# vim swap files
+*.swp
