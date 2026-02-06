@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# File: maze_renderer.py
+# File: renderers/maze_renderer.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/02/02 10:46:59
@@ -13,8 +12,7 @@ common functionality shared between ASCII and MLX renderers.
 """
 
 from abc import ABC, abstractmethod
-from cell import Cell
-from maze_generator import MazeGenerator, OFFSET
+from mazegen import Cell, MazeGenerator, OFFSET
 
 
 class MazeRenderer(ABC):

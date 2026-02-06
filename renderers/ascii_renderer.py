@@ -1,14 +1,12 @@
-#!/usr/bin/env python3
-# File: ascii_renderer.py
+# File: renderers/ascii_renderer.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/23 16:09:10
 # Updated: 2026/01/28 16:09:10
 
 """A module to display a maze with ascii rendering."""
-
-from maze_renderer import MazeRenderer
-from maze_generator import MazeGenerator
+from .maze_renderer import MazeRenderer
+from mazegen import MazeGenerator
 
 
 class AsciiRenderer(MazeRenderer):
@@ -19,7 +17,7 @@ class AsciiRenderer(MazeRenderer):
         Initialize the ASCII renderer.
 
         Args:
-            maze (MazeGenerator): The maze generator instance to render.
+            maze (MazeGenerator): The MazeGenerator instance to render.
         """
         super().__init__(maze)
         self.wall_colors = ["\033[27m", "\033[33m", "\033[32m", "\033[36m"]
@@ -53,7 +51,7 @@ class AsciiRenderer(MazeRenderer):
 
     def new_maze(self) -> None:
         """Generate a new maze with the same configuration and display it."""
-        new_maze: MazeGenerator = MazeGenerator(self.maze._config_file)
+        new_maze: MazeGenerator = MazeGenerator(self.maze.config_file)
         if new_maze.display != "ascii":
             print(
                     "Info: exit program to switch "

@@ -1,4 +1,6 @@
 flake8
 flake8-docstrings
 mypy
-unzip
+pytest
+build
+

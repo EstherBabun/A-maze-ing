@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mazegen"
+version = "1.0.0"
+description = "A library to generate and solve a maze"
+readme = "mazegen_info/README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["mazegen_info/LICENSE"]
+authors = [
+    {name = "ebabun", email = "ebabun@student.42belgium.be"},
+    {name = "mmeurer", email = "mmeurer@student.42belgium.be"}
+]
+
+[tool.setuptools]
+packages = ["mazegen"]

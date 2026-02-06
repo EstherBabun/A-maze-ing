@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# File: maze_renderer.py
+# File: renderers/maze_renderer.py
 # Author: ebabun <ebabun@student.42belgium.be>
 # Author: mmeurer <mmeurer@student.42belgium.be>
 # Created: 2026/01/22 12:35:09
@@ -8,13 +7,39 @@
 """Module to render a maze with mlx graphics library."""
 from ctypes import c_void_p
 from mlx import Mlx  # type: ignore[import-untyped, unused-ignore]
-from maze_renderer import MazeRenderer
-from cell import Cell
-from maze_generator import MazeGenerator
+from .maze_renderer import MazeRenderer
+from mazegen import Cell, MazeGenerator
 
 
 class MlxRenderer(MazeRenderer):
-    """A class holding the renderer's specifications."""
+    """A class holding the renderer's specifications.
+
+    Attributes:
+        m (Mlx): Mlx instance
+        ptr (c_void_p): Mlx instance pointer
+
+        screen_w (int): width of the screen in pixels
+        screen_h (int): height of the screen in pixels
+        window_w (int): width of the window (including optional margin)
+        window_h (int): height of the window (including optional margin)
+        margin (tuple(str, int)): margin for the commands strings
+        cell_size: size of a cell in pixels (default=30)
+        wall_thickness: thickness of the walls in pixels (default=3)
+        img_w (int): width of the image (cell_size * maze_w)
+        img_h (int): height of the image (cell_size * maze_h)
+
+        win_ptr (c_void_p): Window identifier
+        img_ptr (c_void_p): Image identifier
+        img_data (tuple(memoryview, int, int, int)): the image data
+
+        color_palettes (list(dict(str, int)): color themes for the maze
+        palette_names (list(str)): names of the themes
+        color_idx (int): index of the current color theme
+        color_wall (int): color of the walls
+        color_bg (int): background color
+        color_path (int): color of the solution path
+        color_cursor (int): color of user's navigation path
+    """
 
     YELLOW = 0xFFFF00
     BLUE = 0x00FFFF
@@ -25,26 +50,6 @@ class MlxRenderer(MazeRenderer):
 
         Args:
             config (str | None): Path to the config file if there is one
-
-        Attributes:
-            mlx instance:
-            m (Mlx): Mlx instance
-            ptr (c_void_p): Mlx instance pointer
-
-            mlx data:
-            screen_w (int): width of the screen in pixels
-            screen_h (int): height of the screen in pixels
-            window_w (int): width of the window (including optional margin)
-            window_h (int): height of the window (including optional margin)
-            margin (tuple(str, int)): margin for the commands strings
-            cell_size: size of a cell in pixels (default=30)
-            wall_thickness: thickness of the walls in pixels (default=3)
-            img_w (int): width of the image (cell_size * maze_w)
-            img_h (int): height of the image (cell_size * maze_h)
-
-            win_ptr (c_void_p): Window identifier
-            img_ptr (c_void_p): Image identifier
-            img_data (tuple(POINTER(c_char), int, int, int): the image data
         """
         # Initialize parent class (sets maze related attributes)
         super().__init__(maze)
@@ -107,7 +112,7 @@ class MlxRenderer(MazeRenderer):
 
     def new_maze(self) -> None:
         """Create maze instance and initialize maze data."""
-        new_maze = MazeGenerator(self.maze._config_file)
+        new_maze = MazeGenerator(self.maze.config_file)
         if new_maze.display != "mlx":
             print(
                     "Info: exit program to switch "
@@ -327,7 +332,7 @@ class MlxRenderer(MazeRenderer):
             for cell in row:
                 x, y = cell.coord
                 # draw cells
-                if cell._is_42:
+                if cell.is_42:
                     self.draw_cell(x, y, self.color_wall)
                 elif self.show_soluce:
                     if (x, y) in self.soluce_path:
@@ -370,7 +375,7 @@ class MlxRenderer(MazeRenderer):
                     self.draw_cell(x, y, self.color_cursor)
                 if self.show_soluce and (x, y) in self.soluce_path:
                     self.draw_cell(x, y, self.color_path)
-                if cell._is_42:
+                if cell.is_42:
                     self.draw_cell(x, y, self.color_wall)
                 self.draw_walls(x, y)
 

@@ -1,7 +1,31 @@
-WIDTH=20
-HEIGHT=20
-ENTRY=12,2
+# config file example
+# Note: place your config file at the root of the program
+
+# width of the maze [default: 20 - pick any width between 2 and 350]
+WIDTH=32
+
+# height of the maze [default: 10 - pick any height between 2 and 200] 
+HEIGHT=17
+
+# maze entry coordinates [default: (0, 0)] - pick coordinates within maze bounds]
+ENTRY=1,1
+
+# maze exit coordinates [default: (width - 1, height - 1) - pick coordinates within maze bounds]
+EXIT=30,15
+
+# maze is perfect or imperfect [default: True - pick True/False, 1/0, Yes/No, Y/N]
+PERFECT=False
+
+# seed for reproductibility [default: None - pick chosen value]
+SEED=None
+
+# path/for/the/output/file [default: maze.txt - pick any valid path]
+OUTPUT_FILE=maze.txt
+
+# algorithm used for generation [default: wilson - pick dfs or wilson]]
 ALGORITHM=dfs
-PERFECT=No
-OUTPUT_FILE=output/maze.txt
-Display=ascii
+
+# display mode [default: None - pick ascii or mlx]
+display=mlx
+
+
