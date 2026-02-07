@@ -16,7 +16,7 @@ EXIT=30,15
 # maze is perfect or imperfect [default: True - pick True/False, 1/0, Yes/No, Y/N]
 PERFECT=False
 
-# seed for reproductibility [default: None - pick chosen value]
+# seed for reproductibility [default: None - pick an integer]
 SEED=None
 
 # path/for/the/output/file [default: maze.txt - pick any valid path]

@@ -1,8 +1,51 @@
 *This project has been created as part of the 42 curriculum by mmeurer, ebabun.*
 
-# A-maze-ing : Description
-**A-maze-ing** is a maze generator and maze solver project.  
-The purpose of the program is to generate mazes and display them either in ASCII or using a graphical interface.
+# A-maze-ing
+**A-maze-ing** is a maze generator, maze solver and maze rendering project.  
+The purpose of the program is to generate mazes and display them either in ASCII or using a graphical interface (MinilibX).
+
+  ## Table of Contents
+
+  - [A-maze-ing : Description](#a-maze-ing--description)
+  - [Configuration file](#configuration-file)
+    - [Configuration File settings](#configuration-file-settings)
+      - [Configuration tips](#configuration-tips)
+      - [Example](#example-of-configuration-file)
+  - [Instructions](#instructions)
+    - [1. Create a virtual environement and install
+  dependencies](#1-create-a-virtual-environement-and-install-dependencies)
+    - [2. Edit the config file](#2-edit-the-config-file)
+    - [3. Run the program](#3-run-the-program)
+  - [Team and Project Management](#team-and-project-management)
+    - [Team Roles](#team-roles)
+    - [Planning and Evolution](#planning-and-evolution)
+    - [What worked well](#what-worked-well)
+    - [What could be improved](#what-could-be-improved)
+    - [Tools used](#tools-used)
+    - [AI Usage](#ai-usage)
+  - [Program Features](#program-features)
+    - [Features summary](#features-summary)
+    - [Parsing](#parsing)
+    - [Maze generation algorithms](#maze-generation-algorithms)
+      - [The DFS Algorithm](#the-dfs-algorithm)
+      - [Wilson's Algorithm](#wilsons-algorithm)
+    - [Maze resolution algorythm](#maze-resolution-algorythm)
+      - [Breadth-First Search (BFS)](#breadth-first-search-bfs)
+      - [How does BFS garantee the shortest
+  path](#how-does-bfs-garantee-the-shortest-path)
+    - [Rendering](#rendering)
+      - [ASCII Renderer](#ascii-renderer)
+      - [MinilibX Renderer](#minilibx-renderer)
+  - [Hexadecimal Output Format](#hexadecimal-output-format)
+    - [The cell and walls representation](#the-cell-and-walls-representation)
+    - [The solution path representation](#the-solution-path-representation)
+    - [The file structure](#the-file-structure)
+  - [Reusable Code](#reusable-code)
+    - [Package contents](#package-contents)
+    - [Building the package](#building-the-package)
+    - [Installation](#installation)
+    - [Example usage](#example-usage)
+  - [Resources](#resources)
 
 <br/>
 
@@ -25,11 +68,13 @@ If no configuration file is provided, the default settings are applied.
 | ALGORITHM | Maze generation algorithm | `wilson` | `dfs`, `wilson` | `ALGORITHM=wilson` |
 | DISPLAY | Display mode | `None` | `None`, `ascii`, `mlx` | `DISPLAY=mlx` |
 
-#### Notes
+#### Configuration tips
 
 - **File Location**: Place the config file at the root of the project
 - **Format**: Use `KEY=value` format (standard configuration file syntax)
 - All parameters are optional and will use default values if not specified
+- **PERFECT:** A perfect maze will have exactly one path between any two points (no loops, no isolated areas).
+- **SEED:** using the same integer value will always produce the same maze
 
 #### Example of Configuration file
 
@@ -65,10 +110,10 @@ make help
 make install
 ```
 This will create a virtual environement and install the following dependencies:
-- flake8 and flake8-docstrings
-- mypy
-- pytest
-- build
+- flake8 and flake8-docstrings (linter standard)
+- mypy (static type checking)
+- pytest (testing module)
+- build (packaging tool)
 
 ### 2. Edit the config file
 
@@ -133,20 +178,23 @@ Both team members collaborated on:
 
 How it evolved:
 - (week2) The initial make_imperfect() method was flawed and had to be improved
-- (week2) A circular dependency between MazeGenerator and Cell was removed, migrating all maze related methods in Cell back to MazeGenerator.
+- (week2) A circular import between MazeGenerator and Cell was removed, migrating all maze related methods in Cell back to MazeGenerator.
 - (week2) Added a navigation feature to the MlxRenderer class
 - (week3) The parsing system was refactored into a `MazeParser` class for better separation of concerns (SRP)
 - (week3) Added the abstract `MazeRenderer` base class to share common functionality between renderers
 
 ### What worked well
-- Clear separation of responsibilities allowed parallel development
-- Regular code reviews helped maintain consistent code
+- Strong communication: open dialogue about implementation approaches, design decisions, and technical challenges
+- Collaborative mindset: mutual adaptability to each other's working styles and willingness to learn together
+- Clear separation of responsibilities enabled efficient parallel development
+- Consistent code quality through regular code reviews and constructive feedback
 
 ### What could be improved
 - The architecture could have been made more modular from the start,\
-allowing for easier testing of individual components.
+allowing for easier testing of individual components
 - Continuous enforcement of linting and type-checking standards,\
-rather than deferring these checks to the end of development.
+rather than deferring these checks to the end of development
+- Our initial Git workflow wasn't optimized for collaborative merging, requiring time-consuming manual merges at each integration point (but this experience improved our understanding of branching)
 
 ### Tools used
 - **Version control:** Git/Github with feature branches
@@ -156,7 +204,7 @@ rather than deferring these checks to the end of development.
 - **Communication:** Discord for daily coordination
 
 ### AI Usage
-Claude Sonnet 4.5 was used to assist with:
+Claude (Sonnet 4.5) and ChatGPT (5.2) were used to assist with:
 - Learning about maze generation algorithms
 - Learning about python best practices and circular dependencies
 - Understanding MinilibX library usage patterns
@@ -184,7 +232,7 @@ All AI-generated content was reviewed, tested, and modified to ensure correctnes
   - Re-generate a new maze
   - Show or hide the solution path
   - Change wall colors
-  - navigate in the maze (MinilibX only)
+  - Navigate in the maze (MinilibX only)
   - Quit the program
 <br/>
 
@@ -216,6 +264,8 @@ The parsing system uses the `MazeParser` class (`mazegen/maze_parser.py`) to han
 - Size constraints are enforced:
   - max size for generation: 350x200
   - max size for display: 320x150
+
+**Note:** The max sizes were enforced as performance safeguards to avoid excessive generation times and system freezes during rendering.
 
 <br/>
 
@@ -361,7 +411,7 @@ and the solution path (optional) on the terminal.
    - If an invalid choice is entered, a message is displayed and the prompt repeats until a valid choice is made.
    - Once a valid choice is entered, step 1 is repeated, updating the display accordingly.
 
-**Note :** On first display or after re-generating, the maze configuration and any error messages are printed ouside the frame of the window, above the maze representation, to provide a more pleasant “fresh window” experience to the user. To view these messages the user can scroll up in the terminal.
+**Note :** On first display or after re-generating, the maze configuration and any error messages are printed outside the frame of the window, above the maze representation, to provide a more pleasant “fresh window” experience to the user. To view these messages the user can scroll up in the terminal.
 
 <br/>
 
