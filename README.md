@@ -1,8 +1,51 @@
 *This project has been created as part of the 42 curriculum by mmeurer, ebabun.*
 
-# A-maze-ing : Description
+# A-maze-ing
 **A-maze-ing** is a maze generator, maze solver and maze rendering project.  
 The purpose of the program is to generate mazes and display them either in ASCII or using a graphical interface (MinilibX).
+
+  ## Table of Contents
+
+  - [A-maze-ing : Description](#a-maze-ing--description)
+  - [Configuration file](#configuration-file)
+    - [Configuration File settings](#configuration-file-settings)
+      - [Configuration tips](#configuration-tips)
+      - [Example](#example-of-configuration-file)
+  - [Instructions](#instructions)
+    - [1. Create a virtual environement and install
+  dependencies](#1-create-a-virtual-environement-and-install-dependencies)
+    - [2. Edit the config file](#2-edit-the-config-file)
+    - [3. Run the program](#3-run-the-program)
+  - [Team and Project Management](#team-and-project-management)
+    - [Team Roles](#team-roles)
+    - [Planning and Evolution](#planning-and-evolution)
+    - [What worked well](#what-worked-well)
+    - [What could be improved](#what-could-be-improved)
+    - [Tools used](#tools-used)
+    - [AI Usage](#ai-usage)
+  - [Program Features](#program-features)
+    - [Features summary](#features-summary)
+    - [Parsing](#parsing)
+    - [Maze generation algorithms](#maze-generation-algorithms)
+      - [The DFS Algorithm](#the-dfs-algorithm)
+      - [Wilson's Algorithm](#wilsons-algorithm)
+    - [Maze resolution algorythm](#maze-resolution-algorythm)
+      - [Breadth-First Search (BFS)](#breadth-first-search-bfs)
+      - [How does BFS garantee the shortest
+  path](#how-does-bfs-garantee-the-shortest-path)
+    - [Rendering](#rendering)
+      - [ASCII Renderer](#ascii-renderer)
+      - [MinilibX Renderer](#minilibx-renderer)
+  - [Hexadecimal Output Format](#hexadecimal-output-format)
+    - [The cell and walls representation](#the-cell-and-walls-representation)
+    - [The solution path representation](#the-solution-path-representation)
+    - [The file structure](#the-file-structure)
+  - [Reusable Code](#reusable-code)
+    - [Package contents](#package-contents)
+    - [Building the package](#building-the-package)
+    - [Installation](#installation)
+    - [Example usage](#example-usage)
+  - [Resources](#resources)
 
 <br/>
 
@@ -25,7 +68,7 @@ If no configuration file is provided, the default settings are applied.
 | ALGORITHM | Maze generation algorithm | `wilson` | `dfs`, `wilson` | `ALGORITHM=wilson` |
 | DISPLAY | Display mode | `None` | `None`, `ascii`, `mlx` | `DISPLAY=mlx` |
 
-#### Notes
+#### Configuration tips
 
 - **File Location**: Place the config file at the root of the project
 - **Format**: Use `KEY=value` format (standard configuration file syntax)
@@ -161,7 +204,7 @@ rather than deferring these checks to the end of development
 - **Communication:** Discord for daily coordination
 
 ### AI Usage
-Claude (Sonnet 4.5) and ChatGPT (GPT-4) were used to assist with:
+Claude (Sonnet 4.5) and ChatGPT (5.2) were used to assist with:
 - Learning about maze generation algorithms
 - Learning about python best practices and circular dependencies
 - Understanding MinilibX library usage patterns
